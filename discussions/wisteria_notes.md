@@ -90,25 +90,77 @@ the gpu count) or `#PJM -L rscgrp=regular-a` + `#PJM -L node=1`; plus `#PJM -g g
   (upstream untouched); 20M/124M GPT-2-BPE configs. Data path points at the staged
   modded-nanogpt shards (read-only).
 
-## 3. Raw-window locations (diagnostic streams stay on /work, never in git)
+## 3. B4 calibration table (measured 2026-07-19; A100-40GB, driver 535.54.03, torch 2.11.0+cu128)
 
-- (none yet)
+Component times (1 GPU; determinism policy ON: TF32 off, cudnn.benchmark off):
 
-## 4. Node-hours / tokens spent (campaign ledger)
+| component | resnet-18/CIFAR (batch 128, fp32) | gpt20m 6L/384d (batch 32×1024, bf16) |
+|---|---|---|
+| plain train step | 54.1 ms | (calib1 rerun pending) |
+| window step (raw fp16 + JL k=128) | 80.5 ms | — |
+| LB probe (2048@512 / 256 seq@16) | 0.92 s | — |
+| LB probe G2 (4096@512) | 1.79 s | — |
+| λ̂ tracker warm (512-ex subset) | 3.57 s | — |
+| λ̂ tracker cold start | 24.3 s | — |
+| full-model Lanczos k=16 m=48 @2048 | 229 s | — |
 
-| date | what | jobs | GPU-h | tokens |
+- **gpt124m ×8 GPU DDP (batch 24/rank ×1024, bf16): 493.7 ms/step = 398k tokens/s**
+  (short-a calib8, job 9224255). ~12% MFU — no torch.compile (determinism/simplicity);
+  compile is the fallback lever if G4/G5 budgets force it.
+- Flash-attention BACKWARD is nondeterministic (warn-only policy); probe paths use MATH
+  SDPA (double-backward + deterministic). Accepted + recorded; cached-arrays rule applies.
+
+### Family projections vs plan §3.4 budgets (from components; runs × per-run)
+
+| family | budget h | projected | verdict |
+|---|---|---|---|
+| G1 sweep (~181 runs × ~0.26 h) | 110 | **~47** | ok (0.43×) |
+| G2 decomposition (12 × ~3.9 h) | 55 | **~47** | ok (0.85×) |
+| G3 forced (2 ckpts + 132 arms) | 15 | **~2** | ok |
+| G4 20M diagnostic | 75 | ~10–15 (pending gpt20m step time) | ok |
+| G4 124M confirmation (15 × 2.5B tok ÷ 398k/s × 8 GPU) | 90 | **~209** | **2.3× OVER → pause-and-surface (§5)** |
+| G5 124M arms (same rate; recompute at G5 session) | 175 | likely similar overrun factor | surface with G4 |
+| G6 window | 55 | fine at measured rates | ok |
+
+## 4. Raw-window locations (diagnostic streams stay on /work, never in git)
+
+- G1 grid: seed-0 cells keep the EoS-onset window (index 1) raw G for layer3.0.conv1 +
+  linear under `codebases/results/raw/grid_*/` (~11 GB total; policy in run_g1_resnet.py).
+- G2: full G+GLB fp16 windows per cell under `codebases/results/raw/decomp_*/`
+  (~50–100 GB transient; delete after the paper's numbers freeze).
+- G3 checkpoints + probe vectors: `codebases/results/ckpt/g3_*.pt|_probe.npz`.
+
+## 5. Node-hours / tokens spent (campaign ledger)
+
+| date | what | jobs | GPU-h | tokens (≈GPU-h×1.5) |
 |---|---|---|---|---|
-| (pending first submission) | | | | |
+| 2026-07-19 | Phase 0 bring-up: smoke ×3, cudacheck, preflight ×4, calib1 ×3, calib8 (8-GPU) | 9224222–9224312 | ≈1.5 | ≈2.3 |
 
-## 5. Status / next actions
+## 6. Status / next actions
 
-- Phase 0 in progress (2026-07-19): cluster facts verified; B1 done (venv torch 2.11.0+cu128
-  verified against driver 570; wisteria scripts: setup_env / submit / templates / stage_data /
-  sync_results; CIFAR-10 staged+md5-verified, CIFAR-100 downloading (cs.toronto slow),
-  FineWeb pre-staged); B2+B3+B5 written as one core/ batch (device, logging git-sha,
-  looprunner, spectral_stream, hvp, forced, lbprobe) + resnet-cifar & nanogpt-gpu adapters +
-  preflight/smoke/calibrate drivers. CPU micro-smokes of both adapters PASS on the login
-  node (all instrumentation paths exercised; λ̂ tracker shift-fix verified; SDPA MATH
-  backend needed for GPT HVP double-backward — flash kernel lacks it).
-- Next: commit the batch → Codex review → GPU smoke (share-debug) + preflight (share-short)
-  + calibration (share-short & short-a 8-GPU) → Phase-0 gate report to Leon.
+- **Phase 0 COMPLETE, gate PASS (2026-07-19).** Evidence:
+  - Smoke (share-debug GPU): PASS ×3, **bitwise-deterministic** ResNet repeat; full cache
+    records (config/metrics/arrays + runs.csv rows w/ git_sha + stage) for both tasks.
+  - preflight resnet-cifar: **PASS** (P0/P1/P2) — HFER(0.6π) 0.47→0.54 over lr 0.0125→1.6
+    (white q97.5 = 0.418), PSD Spearman 0.68–0.93, ρ₁ −0.12→−0.22. Regime present.
+  - preflight nanogpt-gpu (20M, FineWeb): **PASS** — HFER 0.83–0.86, Spearman 0.70–0.96,
+    ρ₁ −0.60→−0.72. Regime emphatically present.
+  - Codex reviews: round 1 FAIL → all 3 findings fixed (path bug; results/-aware dirty
+    check; DDP-synchronized divergence guard); round 2 on G2/G3 drivers pending.
+  - Divergence guard revised to SUSTAINED 3×-for-10-steps (instant rule misclassified
+    recoverable step-1 spikes at lr ≥ 0.2); preflight P2 revised to the sign test — both
+    documented in-file, before any campaign measurement.
+- **DECISION NEEDED FROM LEON (pause-and-surface, §3.4 +30% rule): G4 124M confirmation
+  projects ~209 GPU-h vs 90 budgeted (2.3×)** at the measured 398k tok/s (15 runs × 2.5B
+  tokens). Options: (a) accept the overrun — total campaign ≈ 900 A100-h ≈ 1,350 tokens,
+  still ~27% of the group's remaining 4,928 (budget headroom is real); (b) 2 seeds instead
+  of 3 at 124M (~140 GPU-h); (c) full 2.5B only for the pre-registered predicted-best cell,
+  1.25B for the other 4 configs (~120 GPU-h); (d) add torch.compile for the 124M runs
+  (12% MFU today; likely ≥2× step-rate, but adds a compile-vs-eager consistency check to
+  the protocol). G5 (175 h, 124M-heavy) will be re-projected at its session with the same
+  lever set. No G4/G5 job launches until Leon picks.
+- G1 STARTED: coarse scan (job 9224311, 10 LRs × 10k steps) running; grid follows the
+  scan classification + preregister + commit, per the predeclaration protocol.
+- Next session entry point: read this file §6, then `pjstat`; if the scan finished,
+  review its classification table in `results/joblogs/g1scan.*.log`, commit grid_lrs,
+  run `--stage preregister`, commit, then launch grid rows (submit.sh, 5 jobs `--rows`).
