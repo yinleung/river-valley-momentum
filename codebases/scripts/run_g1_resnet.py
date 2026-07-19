@@ -57,6 +57,7 @@ from core import closedloop as CL  # noqa: E402
 from core import metrics as Me  # noqa: E402
 from core.device import seed_all, setup_determinism  # noqa: E402
 from core.logging import log_run  # noqa: E402
+from core.spectral_stream import chunked_stream_reductions  # noqa: E402
 import contract  # noqa: E402
 
 CFG_PATH = _CODEBASES / "resnet-cifar" / "config.yaml"
@@ -89,23 +90,18 @@ def teff(beta: float) -> float:
 # --- per-window reductions ---------------------------------------------------
 def reduce_G_window(G: np.ndarray, m0: np.ndarray, beta: float, coef_g: float,
                     key: str) -> dict:
-    """Spectral reductions for one (window, target) raw stream: HFERs, MSR, spectrum."""
-    red: dict[str, np.ndarray | float] = {}
-    G64 = G.astype(np.float64)
-    m_prev = m0.astype(np.float64)
-    M = np.empty_like(G64)
-    for t in range(G64.shape[0]):
-        m_prev = beta * m_prev + coef_g * G64[t]
-        M[t] = m_prev
-    for hf in HI_FRACS:
-        red[f"{key}_hfer{hf}"] = Me.high_freq_energy_ratio(G64, window="rect", hi_frac=hf)
-    red[f"{key}_hfer0.6_hann"] = Me.high_freq_energy_ratio(G64, window="hann", hi_frac=0.6)
-    red[f"{key}_msr"] = Me.momentum_suppression_ratio(G64, M, window="rect")
-    _, X = Me.windowed_dft(G64, window="rect")
-    p = np.sum(np.abs(X) ** 2, axis=tuple(range(1, X.ndim)))
-    red[f"spec_{key}"] = p.astype(np.float32)
-    red[f"gnorm_{key}"] = float(np.sqrt(np.mean(np.sum(
-        G64.reshape(G64.shape[0], -1) ** 2, axis=1))))
+    """Spectral reductions for one (window, target) raw stream: HFERs, MSR, spectrum.
+
+    Chunk-bounded (core.spectral_stream): the naive float64 path needed ~40 GB for the
+    layer4 conv and OOM-killed the first G1 scan job (9224311, silent SIGKILL).
+    """
+    r = chunked_stream_reductions(G, m0, beta, coef_g, hi_fracs=HI_FRACS)
+    red: dict[str, np.ndarray | float] = {
+        f"{key}_hfer{hf}": r[f"hfer{hf}"] for hf in HI_FRACS}
+    red[f"{key}_hfer0.6_hann"] = r["hfer0.6_hann"]
+    red[f"{key}_msr"] = r["msr"]
+    red[f"spec_{key}"] = r["spec"].astype(np.float32)
+    red[f"gnorm_{key}"] = r["gnorm_rms"]
     return red
 
 

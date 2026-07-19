@@ -189,6 +189,24 @@ def gpt_loss(model, batch):
     return loss
 
 
+def measured_ddp_rate() -> float | None:
+    """tokens/s from the cached --ddp124m calibration record, if present."""
+    import csv
+    import json as J
+    idx = _CODEBASES / "results" / "index" / "runs.csv"
+    try:
+        with open(idx) as f:
+            rows = [r for r in csv.DictReader(f)
+                    if r["probe"] == "calibration" and "ddp" in r["key"]]
+        if not rows:
+            return None
+        m = J.loads((_CODEBASES / "results" / "cache" / rows[-1]["run_id"]
+                     / "metrics.json").read_text())
+        return float(m["tokens_per_s"])
+    except Exception:
+        return None
+
+
 def project_family(name: str, budget_h: float, formula: str, hours: float) -> dict:
     ratio = hours / budget_h if budget_h else float("nan")
     flag = "OVER +30% — PAUSE" if ratio > 1.3 else "ok"
@@ -253,11 +271,18 @@ def main() -> None:
                                f"{g4d_runs} runs x {g4d_run_h:.2f} h",
                                g4d_runs * g4d_run_h))
     # 124M confirmation: 5 configs x 3 seeds x 2.5B tokens at the 8-GPU rate (8 GPUs
-    # charged per GPU-h -> hours here are GPU-hours = 8 x wall)
-    conf_wall_h = 2.5e9 / max(g124["tokens_per_s"] * 6.5, 1.0) / 3600  # ~6.5x scaling est
+    # charged per GPU-h -> hours here are GPU-hours = 8 x wall). Uses the MEASURED
+    # --ddp124m record when cached (the 6.5x single-GPU extrapolation overestimated
+    # scaling: measured 398k tok/s = 2.75x).
+    ddp_rate = measured_ddp_rate()
+    if ddp_rate:
+        conf_wall_h = 2.5e9 / ddp_rate / 3600
+        src = f"measured 8-GPU {ddp_rate/1e3:.0f}k tok/s"
+    else:
+        conf_wall_h = 2.5e9 / max(g124["tokens_per_s"] * 6.5, 1.0) / 3600
+        src = "est. 1-GPU x6.5; run --ddp124m for the measured rate"
     fams.append(project_family("G4 124M confirmation", 90,
-                               f"15 runs x {conf_wall_h:.1f} wall-h x 8 GPU (est. from "
-                               "1-GPU rate x6.5; refine with --ddp124m)",
+                               f"15 runs x {conf_wall_h:.1f} wall-h x 8 GPU ({src})",
                                15 * conf_wall_h * 8))
     metrics = dict(**{f"resnet_{k}": v for k, v in rn.items()},
                    **{f"gpt20m_{k}": v for k, v in g20.items()},

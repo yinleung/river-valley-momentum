@@ -13,7 +13,7 @@
   "n_eig": 1,
   "eig_top": 76.46121544478264,
   "instrumentation_ok": true,
-  "secs": 48.3,
+  "secs": 48.6,
   "repro_max_abs_dev": 0.0,
   "repro_ok": true,
   "gate_pass": true

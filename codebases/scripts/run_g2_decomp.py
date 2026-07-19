@@ -56,6 +56,7 @@ from core import metrics as Me  # noqa: E402
 from core.device import seed_all, setup_determinism  # noqa: E402
 from core.lbprobe import state_residual_bands, subspace_split  # noqa: E402
 from core.logging import log_run  # noqa: E402
+from core.spectral_stream import chunked_stream_reductions  # noqa: E402
 import contract  # noqa: E402
 
 CFG_PATH = _CODEBASES / "resnet-cifar" / "config.yaml"
@@ -88,9 +89,10 @@ def ljung_box_p(x: np.ndarray, L: int = 20) -> float:
 def whiteness_stats(xi: np.ndarray, eigvecs: np.ndarray | None, seed: int = 0) -> dict:
     """HFER-vs-white at 3 cutoffs (+Hann) and Ljung-Box rejection fraction of xi."""
     out = {}
+    r = chunked_stream_reductions(xi, None, 0.0, 0.0, hi_fracs=HI_FRACS)
     for hf in HI_FRACS:
-        out[f"hfer_xi_{hf}"] = Me.high_freq_energy_ratio(xi, window="rect", hi_frac=hf)
-    out["hfer_xi_0.6_hann"] = Me.high_freq_energy_ratio(xi, window="hann", hi_frac=0.6)
+        out[f"hfer_xi_{hf}"] = r[f"hfer{hf}"]
+    out["hfer_xi_0.6_hann"] = r["hfer0.6_hann"]
     flat = xi.reshape(xi.shape[0], -1)
     rng = np.random.default_rng(seed + 71)
     dirs = [rng.standard_normal(flat.shape[1]) for _ in range(8)]
@@ -104,15 +106,12 @@ def whiteness_stats(xi: np.ndarray, eigvecs: np.ndarray | None, seed: int = 0) -
     return out
 
 
-def low_band_share(x: np.ndarray, lo_frac: float = 0.15) -> float:
-    """Low-band energy share (omega <= lo_frac*pi, DC excluded) of a stream."""
-    omega, X = Me.windowed_dft(x, window="rect")
-    p = np.sum(np.abs(X) ** 2, axis=tuple(range(1, X.ndim))) if X.ndim > 1 else \
-        np.abs(X) ** 2
-    low, _ = Me.band_masks(omega, lo_frac=lo_frac)
+def low_share_from_spec(spec: np.ndarray, T: int, lo_frac: float = 0.15) -> float:
+    """Low-band energy share (omega <= lo_frac*pi, DC excluded) from a rect spectrum."""
+    omega = 2.0 * np.pi * np.fft.rfftfreq(T)
+    low = (omega <= lo_frac * np.pi) & (omega > 0)
     nz = omega > 0
-    tot = float(np.sum(p[nz]))
-    return float(np.sum(p[low & nz]) / (tot + 1e-300))
+    return float(np.sum(spec[low]) / (np.sum(spec[nz]) + 1e-300))
 
 
 def run_cell(y: dict, lr: float, beta: float, seed: int) -> str:
@@ -134,21 +133,26 @@ def run_cell(y: dict, lr: float, beta: float, seed: int) -> str:
     key = f"decomp_lr{lr:g}_b{beta:g}_s{seed}"
     (RAW_DIR / key).mkdir(parents=True, exist_ok=True)
 
+    coef_g = 1.0 - beta  # G2 runs are P-thy EMA
     red: dict[str, float | np.ndarray] = {}
     pending_G: dict[tuple, np.ndarray] = {}
     raw_paths: list[str] = []
 
     def sink(wi, tn, kind, arr, m0):
+        # Raw persistence policy (storage §3.4): full fp16 G+GLB for the lb_targets and
+        # conv1; layer4.1.conv2 (10 GB/window) is reduced-only. All reductions are
+        # chunk-bounded (core.spectral_stream) — no float64 copies of big streams.
         p = RAW_DIR / key / f"w{wi}_{tn}_{kind}.npz"
         if kind == "G":
-            np.savez_compressed(p, stream=arr, m0=m0)
-            raw_paths.append(str(p))
+            if tn in cfg["lb_targets"] or tn == "conv1":
+                np.savez_compressed(p, stream=arr, m0=m0)
+                raw_paths.append(str(p))
             if tn in cfg["lb_targets"]:
                 pending_G[(wi, tn)] = arr
             else:
-                for hf in HI_FRACS:
-                    red[f"w{wi}_{tn}_hfer{hf}"] = Me.high_freq_energy_ratio(
-                        arr.astype(np.float64), window="rect", hi_frac=hf)
+                r = chunked_stream_reductions(arr, m0, beta, coef_g, hi_fracs=HI_FRACS)
+                red.update({f"w{wi}_{tn}_hfer{hf}": r[f"hfer{hf}"] for hf in HI_FRACS})
+                red[f"w{wi}_{tn}_msr"] = r["msr"]
             return
         # kind == "GLB": paired with the stashed G stream (lb_every = 1 -> aligned)
         np.savez_compressed(p, stream=arr)
@@ -157,18 +161,16 @@ def run_cell(y: dict, lr: float, beta: float, seed: int) -> str:
         if G is None or G.shape[0] != arr.shape[0]:
             red[f"w{wi}_{tn}_pair_error"] = 1.0
             return
-        G64, L64 = G.astype(np.float64), arr.astype(np.float64)
-        bands = state_residual_bands(G64, L64, hi_frac=0.6, window="rect")
+        bands = state_residual_bands(G, arr, hi_frac=0.6, window="rect",
+                                     return_specs=True)
+        red.update({f"spec_w{wi}_{tn}_{s}": bands.pop(f"spec_{s}")
+                    for s in ("mb", "lb", "xi")})
         red.update({f"w{wi}_{tn}_{k}": v for k, v in bands.items()})
         for hf in (0.5, 0.7):
-            b2 = state_residual_bands(G64, L64, hi_frac=hf, window="rect")
+            b2 = state_residual_bands(G, arr, hi_frac=hf, window="rect")
             red[f"w{wi}_{tn}_share_lb_{hf}"] = b2["share_lb"]
-        bh = state_residual_bands(G64, L64, hi_frac=0.6, window="hann")
+        bh = state_residual_bands(G, arr, hi_frac=0.6, window="hann")
         red[f"w{wi}_{tn}_share_lb_hann"] = bh["share_lb"]
-        for s, a in (("mb", G64), ("lb", L64), ("xi", G64 - L64)):
-            _, X = Me.windowed_dft(a, window="rect")
-            red[f"spec_w{wi}_{tn}_{s}"] = np.sum(
-                np.abs(X) ** 2, axis=tuple(range(1, X.ndim))).astype(np.float32)
 
     t0 = time.time()
     out = contract.end_to_end_train(model, data, targets, cfg,
@@ -182,24 +184,23 @@ def run_cell(y: dict, lr: float, beta: float, seed: int) -> str:
         fg = RAW_DIR / key / f"w{wi}_{tn}_G.npz"
         if not (f.exists() and fg.exists() and er["eigvecs"] is not None):
             continue
-        L64 = np.load(f)["stream"].astype(np.float64)
-        G64 = np.load(fg)["stream"].astype(np.float64)
-        V = er["eigvecs"].astype(np.float64)
-        c, r = subspace_split(L64, V)
-        red[f"w{wi}_{tn}_hfer_in"] = Me.high_freq_energy_ratio(c, window="rect",
-                                                               hi_frac=0.6)
-        red[f"w{wi}_{tn}_hfer_out"] = Me.high_freq_energy_ratio(r, window="rect",
-                                                                hi_frac=0.6)
-        def hb_energy(x):
-            omega, X = Me.windowed_dft(x, window="rect")
-            p = np.sum(np.abs(X) ** 2, axis=tuple(range(1, X.ndim))) if X.ndim > 1 \
-                else np.abs(X) ** 2
-            _, high = Me.band_masks(omega, hi_frac=0.6)
-            return float(np.sum(p[high]))
-        eh_in, eh_out = hb_energy(c), hb_energy(r)
+        L32 = np.load(f)["stream"].astype(np.float32)
+        G32 = np.load(fg)["stream"].astype(np.float32)
+        V = er["eigvecs"]
+        c, r = subspace_split(L32, V)
+        T = L32.shape[0]
+        omega = 2.0 * np.pi * np.fft.rfftfreq(T)
+        high = omega >= 0.6 * np.pi
+        nz = omega > 0
+        rc = chunked_stream_reductions(c, None, 0.0, 0.0, hi_fracs=(0.6,))
+        rr = chunked_stream_reductions(r, None, 0.0, 0.0, hi_fracs=(0.6,))
+        red[f"w{wi}_{tn}_hfer_in"] = rc["hfer0.6"]
+        red[f"w{wi}_{tn}_hfer_out"] = rr["hfer0.6"]
+        eh_in = float(np.sum(rc["spec"][high]))
+        eh_out = float(np.sum(rr["spec"][high]))
         red[f"w{wi}_{tn}_share_high_in"] = eh_in / (eh_in + eh_out + 1e-300)
-        red[f"w{wi}_{tn}_low_in"] = low_band_share(c)
-        red[f"w{wi}_{tn}_low_out"] = low_band_share(r)
+        red[f"w{wi}_{tn}_low_in"] = low_share_from_spec(rc["spec"], T)
+        red[f"w{wi}_{tn}_low_out"] = low_share_from_spec(rr["spec"], T)
         red[f"w{wi}_{tn}_hfer_dir"] = np.array(
             [Me.high_freq_energy_ratio(c[:, i], window="rect", hi_frac=0.6)
              for i in range(V.shape[0])], dtype=np.float32)
@@ -207,7 +208,7 @@ def run_cell(y: dict, lr: float, beta: float, seed: int) -> str:
         red[f"w{wi}_{tn}_eig_resid"] = er["eig_resid"].astype(np.float32)
         red[f"w{wi}_{tn}_eta_lam"] = (lr * er["eigvals"]).astype(np.float32)
         red.update({f"w{wi}_{tn}_{k}": v for k, v in
-                    whiteness_stats(G64 - L64, er["eigvecs"], seed).items()})
+                    whiteness_stats(G32 - L32, er["eigvecs"], seed).items()})
 
     wlen = cfg["windows"][0][1]
     rng = np.random.default_rng(0)

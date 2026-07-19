@@ -145,20 +145,24 @@ def stage_make_ckpts(y: dict) -> None:
               f"theta09={theta09:.3f} theta099={theta099:.3f}")
 
 
-def _arm_omegas(tag: str) -> dict[str, float]:
+def _arm_omegas(tag: str, lr: float) -> dict[str, float]:
     m = json.loads((_CODEBASES / "results" / "cache" /
-                    _find_ckpt_run(tag) / "metrics.json").read_text())
+                    _find_ckpt_run(tag, lr) / "metrics.json").read_text())
     return {"passband": 0.02, "resonance": m["theta09"], "high": 0.6 * np.pi,
             "nyquist": float(np.pi)}, m
 
 
-def _find_ckpt_run(tag: str) -> str:
+def _find_ckpt_run(tag: str, lr: float) -> str:
+    """Exact-key lookup (task + key == f"{tag}_lr{lr:g}"): a rerun of make_ckpts at a
+    revised LR must never pair arms with a stale checkpoint's theta values (Codex
+    review finding on fixed-frequency provenance)."""
     import csv
     with open(_CODEBASES / "results" / "index" / "runs.csv") as f:
         rows = [r["run_id"] for r in csv.DictReader(f)
-                if r["probe"] == "g3ckpt" and r["key"].startswith(tag)]
+                if r["task"] == "resnet-cifar" and r["probe"] == "g3ckpt"
+                and r["key"] == f"{tag}_lr{lr:g}"]
     if not rows:
-        raise SystemExit(f"no g3ckpt record for {tag} — run make_ckpts")
+        raise SystemExit(f"no g3ckpt record for {tag} at lr={lr:g} — run make_ckpts")
     return rows[-1]
 
 
@@ -211,7 +215,7 @@ def stage_arms(y: dict, only_ckpt: str | None) -> None:
     for tag, lr in _ckpt_lrs(y).items():
         if only_ckpt and tag != only_ckpt:
             continue
-        omegas, m = _arm_omegas(tag)
+        omegas, m = _arm_omegas(tag, lr)
         probe = np.load(CKPT_DIR / f"g3_{tag}_probe.npz")
         v_flat, A = probe["v_flat"], float(probe["A"])
         betas = [float(b) for b in y["g3"]["betas"]]

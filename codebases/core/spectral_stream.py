@@ -27,7 +27,65 @@ from typing import Iterable
 import numpy as np
 import torch
 
-__all__ = ["JLSketch", "WindowBuffer", "StreamStats"]
+__all__ = ["JLSketch", "WindowBuffer", "StreamStats", "chunked_stream_reductions"]
+
+
+def chunked_stream_reductions(G: np.ndarray, m0: np.ndarray | None, beta: float,
+                              coef_g: float, hi_fracs=(0.5, 0.6, 0.7),
+                              chunk_entries: int = 1 << 18) -> dict:
+    """Memory-bounded spectral reductions of a (T, *shape) stream (fp16 ok) + its EMA.
+
+    Never materializes more than `chunk_entries` flattened columns in float32 — a
+    2048-step window over a 2.36M-parameter conv would otherwise need ~40 GB per float64
+    copy (the Phase-0 G1-scan OOM). Column chunking is exact for every returned quantity:
+    Frobenius per-frequency energies are sums over entries.
+
+    Returns: spec (rect per-frequency energy of G, float64 (T//2+1,)), hfer<f> per cutoff
+    (rect), hfer0.6_hann, msr (high-band EMA/raw, rect; requires m0), gnorm_rms.
+    Conventions match core.metrics (DC excluded from HFER denominators; float32 transform
+    precision, declared).
+    """
+    T = G.shape[0]
+    flat = G.reshape(T, -1)
+    D = flat.shape[1]
+    nf = T // 2 + 1
+    win_h = np.hanning(T).astype(np.float32)[:, None]
+    spec = np.zeros(nf)
+    spec_h = np.zeros(nf)
+    spec_m = np.zeros(nf) if m0 is not None else None
+    m0f = m0.reshape(-1) if m0 is not None else None
+    energy = 0.0
+    for lo in range(0, D, chunk_entries):
+        seg = np.ascontiguousarray(flat[:, lo:lo + chunk_entries]).astype(np.float32)
+        X = np.fft.rfft(seg, axis=0)
+        spec += np.sum(np.abs(X) ** 2, axis=1)
+        del X
+        Xh = np.fft.rfft(seg * win_h, axis=0)
+        spec_h += np.sum(np.abs(Xh) ** 2, axis=1)
+        del Xh
+        energy += float(np.sum(seg.astype(np.float64) ** 2))
+        if spec_m is not None:
+            m = np.empty_like(seg)
+            prev = m0f[lo:lo + chunk_entries].astype(np.float32)
+            for t in range(T):
+                prev = beta * prev + coef_g * seg[t]
+                m[t] = prev
+            Xm = np.fft.rfft(m, axis=0)
+            spec_m += np.sum(np.abs(Xm) ** 2, axis=1)
+            del Xm, m
+    omega = 2.0 * np.pi * np.fft.rfftfreq(T)
+    nz = omega > 0
+    out: dict = {"spec": spec, "spec_hann": spec_h,
+                 "energy": energy, "gnorm_rms": float(np.sqrt(energy / T))}
+    for hf in hi_fracs:
+        high = omega >= hf * np.pi
+        out[f"hfer{hf}"] = float(np.sum(spec[high]) / (np.sum(spec[nz]) + 1e-300))
+        if hf == 0.6:
+            out["hfer0.6_hann"] = float(np.sum(spec_h[high])
+                                        / (np.sum(spec_h[nz]) + 1e-300))
+            if spec_m is not None:
+                out["msr"] = float(np.sum(spec_m[high]) / (np.sum(spec[high]) + 1e-300))
+    return out
 
 
 class JLSketch:

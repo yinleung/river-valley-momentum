@@ -45,7 +45,7 @@
   "task": "nanogpt-gpu",
   "probe": "smoke",
   "code_sha": "e0efac6b",
-  "git_sha": "aca54008",
+  "git_sha": "87f73230",
   "git_dirty": true,
   "content_sha": "e0efac6b",
   "python": "3.11.7",

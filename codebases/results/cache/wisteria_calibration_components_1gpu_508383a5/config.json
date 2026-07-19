@@ -1,0 +1,33 @@
+{
+  "stage": "explore",
+  "resnet_batch": 128,
+  "gpt20m": {
+    "seed": 0,
+    "n_layer": 6,
+    "n_head": 6,
+    "n_embd": 384,
+    "block_size": 1024,
+    "vocab_size": 50304,
+    "batch_size": 32,
+    "device": "auto"
+  },
+  "gpt124m": {
+    "seed": 0,
+    "n_layer": 12,
+    "n_head": 12,
+    "n_embd": 768,
+    "block_size": 1024,
+    "vocab_size": 50304,
+    "batch_size": 24,
+    "device": "auto"
+  },
+  "task": "wisteria",
+  "probe": "calibration",
+  "code_sha": "508383a5",
+  "git_sha": "87f73230",
+  "git_dirty": true,
+  "content_sha": "508383a5",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "platform": "Linux-4.18.0-372.9.1.el8.x86_64-x86_64-with-glibc2.28"
+}

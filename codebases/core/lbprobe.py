@@ -25,8 +25,6 @@ from typing import Callable, Sequence
 import numpy as np
 import torch
 
-from . import metrics as Me
-
 __all__ = ["LargeBatchProbe", "state_residual_bands", "subspace_split"]
 
 
@@ -85,33 +83,40 @@ class LargeBatchProbe:
 
 
 def state_residual_bands(G_mb: np.ndarray, G_lb: np.ndarray, hi_frac: float = 0.6,
-                         window: str = "rect") -> dict:
+                         window: str = "rect", return_specs: bool = False) -> dict:
     """E12's temporal accounting for one window: HFERs, band energies, shares, cross term.
 
     G_mb, G_lb: (T, ...) streams (time on axis 0). Denominators are explicit in the keys:
     share_lb over Eh(LB)+Eh(xi); cross over Eh(mb). Rectangular window primary (§3.0.3).
+    Chunk-bounded via core.spectral_stream (float32 transform precision, declared): the
+    float64 windowed_dft path costs ~15 GB per 2048x300k window across the three streams.
     """
-    G_mb = G_mb.astype(np.float64)
-    G_lb = G_lb.astype(np.float64)
-    xi = G_mb - G_lb
+    from .spectral_stream import chunked_stream_reductions
 
-    def high_band_energy(x):
-        omega, X = Me.windowed_dft(x, window=window)
-        _, high = Me.band_masks(omega, hi_frac=hi_frac)
-        axes = tuple(range(1, X.ndim))
-        p = np.sum(np.abs(X) ** 2, axis=axes) if X.ndim > 1 else np.abs(X) ** 2
-        return float(np.sum(p[high]))
-
-    eh = {s: high_band_energy(a) for s, a in (("mb", G_mb), ("lb", G_lb), ("xi", xi))}
-    hfer = {s: Me.high_freq_energy_ratio(a, window=window, hi_frac=hi_frac)
-            for s, a in (("mb", G_mb), ("lb", G_lb), ("xi", xi))}
-    return dict(
+    xi = G_mb.astype(np.float32) - G_lb.astype(np.float32)
+    T = G_mb.shape[0]
+    omega = 2.0 * np.pi * np.fft.rfftfreq(T)
+    high = omega >= hi_frac * np.pi
+    nz = omega > 0
+    spec_key = "spec" if window == "rect" else "spec_hann"
+    eh, hfer, energy, specs = {}, {}, {}, {}
+    for s, a in (("mb", G_mb), ("lb", G_lb), ("xi", xi)):
+        r = chunked_stream_reductions(a, None, 0.0, 0.0, hi_fracs=(hi_frac,))
+        spec = r[spec_key]
+        eh[s] = float(np.sum(spec[high]))
+        hfer[s] = float(np.sum(spec[high]) / (np.sum(spec[nz]) + 1e-300))
+        energy[s] = r["energy"]
+        specs[s] = r["spec"].astype(np.float32)  # rect spectrum for the figure panels
+    out = dict(
         hfer_mb=hfer["mb"], hfer_lb=hfer["lb"], hfer_xi=hfer["xi"],
         eh_mb=eh["mb"], eh_lb=eh["lb"], eh_xi=eh["xi"],
         share_lb=eh["lb"] / (eh["lb"] + eh["xi"] + 1e-300),
         cross=(eh["mb"] - eh["lb"] - eh["xi"]) / (eh["mb"] + 1e-300),
-        energy_lb=float(np.sum(G_lb**2)), energy_xi=float(np.sum(xi**2)),
+        energy_lb=energy["lb"], energy_xi=energy["xi"],
     )
+    if return_specs:
+        out.update(spec_mb=specs["mb"], spec_lb=specs["lb"], spec_xi=specs["xi"])
+    return out
 
 
 def subspace_split(X: np.ndarray, V: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -123,8 +128,8 @@ def subspace_split(X: np.ndarray, V: np.ndarray) -> tuple[np.ndarray, np.ndarray
     """
     T = X.shape[0]
     k = V.shape[0]
-    Xf = X.reshape(T, -1).astype(np.float64)
-    Vf = V.reshape(k, -1).astype(np.float64)
+    Xf = X.reshape(T, -1).astype(np.float32)
+    Vf = V.reshape(k, -1).astype(np.float32)
     c = Xf @ Vf.T
     r = Xf - c @ Vf
-    return c, r.reshape(X.shape)
+    return c.astype(np.float64), r.reshape(X.shape)
