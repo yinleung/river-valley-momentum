@@ -1,34 +1,73 @@
-# resnet-cifar task config (plan_v5 G1/G2/G3)
-# Model: upstream kuangliu/pytorch-cifar ResNet-18 (BN; "gn" swaps to GroupNorm control).
 model:
-  norm: bn                     # bn | gn (G1 BN-free control arm)
+  norm: bn
 data:
-  dataset: cifar10             # cifar10 | cifar100 (G1 thinned complete sweep)
+  dataset: cifar10
   batch_size: 128
-  augment: false               # mechanism runs unaugmented (G1 card); P-prac may enable
+  augment: false
 train:
   steps: 10000
   eval_every: 1000
   device: auto
-  # diagnostic windows (start, len): early / EoS-onset / late; len >= 2048 so the
-  # beta = 0.99 T_eff = 199 satisfies window >= 10*T_eff (protocol §3.0.3)
-  windows: [[1000, 2048], [4000, 2048], [7448, 2048]]
-  sketch_k: 128                # JL sketch dims within windows
-  lam_every: 200               # sharpness tracker cadence (fixed 512-example subset)
+  windows:
+  - - 1000
+    - 2048
+  - - 4000
+    - 2048
+  - - 7448
+    - 2048
+  sketch_k: 128
+  lam_every: 200
   lam_batch: 512
   lam_chunk: 512
-  lb_batch: 2048               # large-batch probe for alignment(m, gbar_LB) in windows
+  lb_batch: 2048
   lb_chunk: 512
-  lb_every: 256                # G1 cadence within windows (G2 probe runs use 1)
+  lb_every: 256
 g1:
-  scan_lrs: [0.0125, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4]  # coarse beta=0 scan
-  # (6.4 appended after the preflight: no beta=0 divergence within 384 steps at 1.6, so
-  #  the unstable regime needs headroom; preflight run resnet-cifar_preflight_ladder5_...)
-  betas: [0.0, 0.5, 0.9, 0.95, 0.99]
-  seeds: [0, 1, 2]
-  headline_seeds: [0, 1, 2, 3, 4]
-  # grid_lrs: chosen from the scan (subcritical / intermediate / near-edge / beta0-unstable),
-  # written here by the scan step BEFORE the grid launches (predeclaration)
+  scan_lrs:
+  - 0.0125
+  - 0.025
+  - 0.05
+  - 0.1
+  - 0.2
+  - 0.4
+  - 0.8
+  - 1.6
+  - 3.2
+  - 6.4
+  betas:
+  - 0.0
+  - 0.5
+  - 0.9
+  - 0.95
+  - 0.99
+  seeds:
+  - 0
+  - 1
+  - 2
+  headline_seeds:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  # grid_lrs: reviewed pick from the completed scan (job 9224566; records
+  # resnet-cifar_g1_scan_* at git c1aa62f/7776e58), classified on MID-RUN chi
+  # (median of chi_trace at t >= 1000) — tail chi under-classifies because sharpness
+  # collapses at memorization. Regimes: 0.05 subcritical (chi_med 0.48); 0.1
+  # intermediate onset (1.96, acc peak 0.843); 0.2 EoS (2.33); 0.4 EoS max (2.51 —
+  # the auto-pick missed 0.4/0.8, the strongest predicted-benefit cells); 0.8
+  # near-edge (2.34); 3.2 beyond-edge self-stabilized (1.66, acc degraded to 0.687).
+  # SCAN FINDING: beta=0 NEVER diverges up to lr 6.4 at 10k steps (BN rescaling
+  # protection) -> card gate (b) is not testable on the BN arm; it is tested on the
+  # GroupNorm control arm, and the BN-side stabilization claim is reported as accuracy
+  # recovery at lr 3.2 (labeled supplementary, decided post-scan pre-grid).
+  grid_lrs:
+  - 0.05
+  - 0.1
+  - 0.2
+  - 0.4
+  - 0.8
+  - 3.2
 g2:
   lb_every: 1
   lb_batch: 4096
@@ -38,10 +77,25 @@ g2:
   eig_m: 48
   eig_batch: 2048
   eig_chunk: 512
-  lb_targets: ["layer2.0.conv1", "layer3.0.conv1", "linear"]  # decomposition matrices
+  lb_targets:
+  - layer2.0.conv1
+  - layer3.0.conv1
+  - linear
 g3:
-  omegas: [0.02, "theta_hat_0.9", 1.885, 3.14159265]   # passband / resonance / 0.6pi / pi
-  betas: [0.0, 0.5, 0.9, 0.95, 0.99]
+  omegas:
+  - 0.02
+  - theta_hat_0.9
+  - 1.885
+  - 3.14159265
+  betas:
+  - 0.0
+  - 0.5
+  - 0.9
+  - 0.95
+  - 0.99
   steps: 500
-  amp_frac: 0.2                # A = amp_frac * rms aligned gradient (10-30% per card)
-  seeds: [0, 1, 2]
+  amp_frac: 0.2
+  seeds:
+  - 0
+  - 1
+  - 2
