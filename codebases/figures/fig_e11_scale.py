@@ -58,11 +58,19 @@ def build() -> None:
                  title="(b) lr=0.4 (seed 0): β=0 diverges (×), β≥0.9 trains")
     ax[0, 1].legend(fontsize=9)
 
-    # (c) benefit and stream HFER vs lr
+    # (c) benefit and stream HFER vs lr — divergence-counted: no percentage is drawn
+    # against a baseline cell with a diverged seed (the beta=0 arm fails at lr=0.4)
     bmap = rec["metrics"]["benefit"]
-    xs = [lr for lr in lrs if str(lr) in bmap]
-    ax[1, 0].bar([str(lr) for lr in xs], [100 * bmap[str(lr)] for lr in xs],
-                 color="#059669", width=0.5, label="best-β benefit vs β=0 (%)")
+    clean = [A["ndiv"][li, 0] == 0 for li in range(len(lrs))]
+    heights = [100 * bmap[str(lr)] if ok else 0.0
+               for ok, lr in zip(clean, lrs)]  # failed baseline: category kept, no bar
+    ax[1, 0].bar([str(lr) for lr in lrs], heights, color="#059669", width=0.5,
+                 label="best-β benefit vs β=0 (%)")
+    for li, (ok, lr) in enumerate(zip(clean, lrs)):
+        if not ok:
+            ax[1, 0].annotate(f"β=0 fails\n({int(A['ndiv'][li, 0])}/{n_seeds} seeds)\n"
+                              "no % drawn", xy=(str(lr), 0.4), ha="center", va="bottom",
+                              fontsize=9, color="#dc2626")
     ax2 = ax[1, 0].twinx()
     ax2.plot([str(lr) for lr in lrs], A["hfer0"], marker="o", color="#111111",
              lw=style.LW.PRIMARY, label=r"HFER($\mathbf{G}$, β=0)")

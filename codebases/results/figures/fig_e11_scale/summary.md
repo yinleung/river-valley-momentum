@@ -23,7 +23,7 @@ cd figures   && python fig_e11_scale.py
 recalibrated — see caveats). Gate A: HFER(G, β=0) = 0.821/0.823/0.838 at lr=0.05/0.1/0.2 vs
 white 0.402 — mini-batch transformer streams are hill-dominated at every stable lr (no
 smooth sub-critical regime, unlike the full-batch MLP). Gate C + the regime dose-response:
-best-β benefit over β=0 rises 0.8% → 3.5% → 11.9% → 21.8% across lr = 0.05/0.1/0.2/0.4.
+best-β benefit over β=0 rises 0.8% → 3.5% → 11.9% → 21.8% across lr = 0.05/0.1/0.2/0.4 [the 21.8% is against a diverged-seed baseline — superseded; see 2026-07-19 update below].
 The sweep-best cell is (lr=0.4, β=0.95) at train 1.946 — a learning rate where β=0 diverges
 on one of three seeds and its survivors are among the worst cells (2.488). Gate E: pre-polar
 beats post-polar 3/3 at lr=0.05 (median gap +0.023) and 2/3 at lr=0.2 (+0.035; post-polar
@@ -40,3 +40,11 @@ within-row loss spreads from a single probe seed; reported as a limitation, not 
 Muon gaps are small (+0.02/+0.03) relative to the toy MLP's (+0.22 at EoS). β=0.99 columns
 show the warm-up lag at every lr (CL-3′). No gradient clipping anywhere; divergence guard
 at 3× the initial loss.
+
+**Update 2026-07-19 (revision for resubmission; figure spec change only, same cached run).**
+Panel (c) now draws benefit bars only for learning rates whose β=0 arm survives all seeds
+(0.8%/3.5%/11.9% at lr=0.05/0.1/0.2, from `metrics.json:benefit`); at lr=0.4 the β=0
+baseline fails (ndiv=1 of 3) and the panel annotates the failure instead of drawing a
+percentage — the divergence-counted criterion of review_v5 (weakness 5), now also a
+CRITERION.md register rule. The 21.8% figure quoted above is against the surviving-seed
+baseline and no longer appears in the paper. Body text and caption updated to match.

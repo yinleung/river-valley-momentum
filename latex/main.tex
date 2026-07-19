@@ -57,10 +57,12 @@ A third reading---momentum as a temporal filter on the gradient stream---exists,
 We close the loop between the filter and the loss geometry that generates its input.
 The river-valley landscape emits a frequency-separated stream: along a steep hill direction at a large learning rate the iterate oscillates near the Nyquist frequency---we prove the separation for the deterministic edge-of-stability transient and compute the stationary noise-driven spectrum exactly, with zero DC mass---while the slow river direction stays near DC.
 An exact windowed-DFT identity makes the exponential moving average $m_t=\beta m_{t-1}+(1-\beta)g_t$ a finite-window band filter with explicit high-frequency contraction $\rhohigh(\beta)$ and low-frequency distortion $\epslow(\beta)$, so momentum raises the river-to-hill ratio of the buffer.
-In the closed loop, momentum shifts the hill stability threshold to $\eta\lambda<2\Teff$, sets the stationary hill variance to $\eta\sigma^2/(\lambda(2-\eta\lambda/\Teff))$, and---under EMA normalization at fixed $\eta$; the sweep direction reverses under heavy-ball normalization at fixed $\eta_{\mathrm{HB}}$---the stationary hill loss is strictly decreasing in $\beta$ with maximal relative reduction exactly $\eta\lambda/2$.
-The closed-loop forced response then separates what filtering does at the trajectory level: a Nyquist disturbance is removed at gain $\propto1/\Teff$, a passband bias is displaced by $1/\lambda$ at every $\beta$, and a tone at the loop's own underdamped frequency is amplified without bound as $\beta\to1$---the benefit is a $\beta$ window, not a monotone preference for $\beta\to1$---while a curved-valley reduction ties both window edges to landscape constants and matches the measured confinement floors to grid resolution.
-For a nonlinear direction map such as the matrix polar factor used by Muon, we prove filter-first theorems in deterministic-Nyquist, band-limited, and band-energy forms---the last with the measured high-band energy fraction as its hypothesis---so filtering before the map recovers the signal subspace at disturbance amplitudes where the unfiltered map never does.
-Experiments confirm each prediction: the measured hill loss falls with $\beta$ by the predicted margin and only in the predicted regime; forced-disturbance controls follow the parameter-free gain guides over nearly three orders of magnitude, including the predicted resonant harm; a real network at the edge of stability shows the Nyquist oscillation emerging only at valley confinement; and in mini-batch transformer training, where the momentum benefit grows with the learning rate to $22\%$, a large-batch decomposition places the high-frequency content in the mean-loss gradient at the visited iterates, concentrated on the top curvature directions---hill oscillation, not sampling noise---while filtering before the polar map keeps its advantage.
+In the closed loop, momentum shifts the hill stability threshold to $\eta\lambda<2\Teff$, sets the stationary hill variance to $\eta\sigma^2/(\lambda(2-\eta\lambda/\Teff))$, and makes the stationary hill loss strictly decreasing in $\beta$ with maximal relative reduction exactly $\eta\lambda/2$---a claim about the EMA convention at fixed $\eta$: at fixed $\eta_{\mathrm{HB}}$ the sweep reverses at small $\eta_{\mathrm{HB}}\lambda$, with closed-form optimum $\max(0,\sqrt{\eta_{\mathrm{HB}}\lambda}-1)$, and we state both as theorems.
+The closed-loop forced response then separates what filtering does at the trajectory level: a Nyquist disturbance is removed at gain $\propto1/\Teff$, a passband bias is displaced by $1/\lambda$ at every $\beta$, and a tone at the loop's own underdamped frequency is amplified without bound as $\beta\to1$---the benefit is a $\beta$ window, not a monotone preference for $\beta\to1$.
+A curved-valley reduction carries the loop to bending rivers in labeled strengths---exact for the linear floor, where it decouples into two straight loops at the Hessian eigenvalues; quasi-static, with a stated validity margin, for general floors---and its frozen stability diagnostic matches the measured confinement floors to grid resolution.
+For the matrix polar factor used by Muon we keep buffer and update apart: filter-first theorems in deterministic-Nyquist, band-limited, and band-energy forms control the buffer feeding the map; a necessity example shows the exact polar of a rank-deficient signal transfers none of that control; and two update-level theorems recover the transfer at the same $1/\Teff$ rate---for the exact polar under a full-rank signal, and for the finite Newton--Schulz operator practical Muon deploys, at an explicit Lipschitz price.
+Controlled experiments measure the predictions: the hill loss falls with $\beta$ by the predicted margin and only in the predicted regime; forced-disturbance controls follow the parameter-free gain guides over nearly three orders of magnitude, including the predicted resonant harm; a real network at the edge of stability shows the Nyquist oscillation emerging only at valley confinement; and in mini-batch transformer training, where the momentum benefit grows with the learning rate---to $12\%$ at the largest rate every arm survives, with $\beta=0$ failing outright at the rate above while momentum trains---a large-batch decomposition places the high-frequency content in the mean-loss gradient at the visited iterates, concentrated on the top curvature directions---hill oscillation, not sampling noise---with the filter-first ordering persisting at that scale.
+Negative results are reported alongside: deterministic ringing at large $\beta$, a mechanism score that does not rank $\beta$ at transformer scale, and the update-level knee of the deployed Newton--Schulz operator left unmeasured.
 \end{abstract}
 
 \section{Introduction}
@@ -88,16 +90,22 @@ Concretely:
 \item We prove an \emph{exact} windowed-DFT identity for the exponential moving average (\Cref{prop:transfer}) and, from it, a finite-window band-filtering theorem (\Cref{thm:filter}) with explicit high-frequency contraction $\rhohigh(\beta)$ and low-frequency distortion $\epslow(\beta)$.
 The two move oppositely in $\beta$: this is the filtering--lag tradeoff.
 \item We prove that the river valley emits the separated spectrum the filter needs: in the deterministic oscillatory regime the hill gradient concentrates at the Nyquist frequency and the river at DC (\Cref{thm:separation}); in the noise-driven regime the stationary hill-gradient spectrum is exactly $\sigma^2\lvert1-e^{-i\omega}\rvert^2/\lvert1-(1-\eta\lambda)e^{-i\omega}\rvert^2$ (\Cref{thm:spectrum}), with zero DC mass; and with no model at all, a confined coordinate has bounded DC mass while a travelled one grows (\Cref{lem:confinement}).
-Momentum raises the river-to-hill energy ratio of the buffer by up to $((1+\beta)/(1-\beta))^2$.
-\item We close the loop: the hill mode driven by EMA momentum is stable iff $\eta\lambda<2\Teff$ (\Cref{prop:stability}), under white gradient noise its stationary variance is $\eta\sigma^2/(\lambda(2-\eta\lambda/\Teff))$ (\Cref{prop:variance}), and the stationary hill \emph{loss} is strictly decreasing in $\beta$ with maximal relative reduction $\eta\lambda/2$ (\Cref{cor:hillloss})---under EMA normalization at fixed $\eta$; at fixed $\eta_{\mathrm{HB}}$ the sweep direction reverses, and E9 measures both---so momentum's trajectory-level benefit is a large-learning-rate effect, and the river drift is preserved to first order.
+Momentum raises the river-to-hill energy ratio of the buffer by up to $((1+\beta)/(1-\beta))^2$---an open-loop, near-pure-tone limit, not a closed-loop guarantee.
+\item We close the loop: the hill mode driven by EMA momentum is stable iff $\eta\lambda<2\Teff$ (\Cref{prop:stability}), under white gradient noise its stationary variance is $\eta\sigma^2/(\lambda(2-\eta\lambda/\Teff))$ (\Cref{prop:variance}), and the stationary hill \emph{loss} is strictly decreasing in $\beta$ with maximal relative reduction $\eta\lambda/2$ (\Cref{cor:hillloss})---under EMA normalization at fixed $\eta$; at fixed $\eta_{\mathrm{HB}}$ the sweep reverses at small $\eta_{\mathrm{HB}}\lambda$ with closed-form optimum $\max(0,\sqrt{\eta_{\mathrm{HB}}\lambda}-1)$ (\Cref{cor:hb}), and E9 measures both---so momentum's trajectory-level benefit is a large-learning-rate effect, and the river drift is preserved to first order.
 In our model this supplies a mechanism for the river-aligned-momentum property that \citet{shen2026muon} \emph{assume} for Muon in the river valley.
-\item We characterize what the closed loop does to \emph{every} frequency: the forced-response gain $\lvert G_\beta(\omega)\rvert$ (\Cref{prop:forced}) removes Nyquist disturbances at rate $1/\Teff$, leaves passband bias at the $\beta$-free displacement $1/\lambda$, and amplifies tones at the loop's own underdamped frequency without bound as $\beta\to1$---three falsifiable controls that E13 confirms on parameter-free guides.
-A curved-valley reduction (\Cref{prop:curved}) maps the hill offset exactly onto this closed loop with the local sharpness $\lambda(1+f'^2)$ and a geometric passband forcing, giving the $\beta$ window's floor in closed form (it matches E10's measured confinement floors to grid resolution) and the $\beta$-free tracking offset that curvature costs at every momentum.
-\item We prove a deterministic filter-first theorem for the polar map (\Cref{thm:filterfirst}): the buffer's Nyquist disturbance dies at rate $1/\Teff$---deterministically, faster than the $\Teff^{-1/4}$ stochastic rate of \citet{li2026denoise}---so pre-polar recovers the signal subspace at disturbance amplitudes where polar-only provably never does; its band-limited generalization (\Cref{thm:bandlimited}), which contracts any high-band disturbance by $\rhohigh(\beta)$ while tracking a slowly varying signal; and a band-energy corollary (\Cref{cor:bandenergy}) whose hypothesis is the disturbance stream's measured high-band energy fraction---the quantity HFER estimates---at the price of most-steps rather than every-step control.
-\item We verify every prediction in controlled settings (\Cref{sec:experiments}; \Cref{tab:map} maps results to tests), led by a direct optimization-quality sweep in which the measured hill loss falls with $\beta$ by the predicted $\eta\lambda/2$ and only in the predicted regime (E9), with the $\beta$ window traced along both of its axes (conditioning and river curvature; E10) and the mechanism exposed to falsification by forced-disturbance controls whose outcome must follow frequency content, not $\beta$ (E13).
+\item We characterize what the closed loop does to \emph{every} frequency: the forced-response gain $\lvert G_\beta(\omega)\rvert$ (\Cref{prop:forced}) removes Nyquist disturbances at rate $1/\Teff$, leaves passband bias at the $\beta$-free displacement $1/\lambda$, and amplifies tones at the loop's own underdamped frequency without bound as $\beta\to1$---three falsifiable controls that E13 measures on parameter-free guides, in $28$ of $28$ cells.
+A curved-valley reduction (\Cref{prop:curved}) carries the closed loop to bending rivers in three labeled strengths: an exact one-step identity; an exact solution for the linear floor, which decouples into \emph{two} straight-valley loops at the Hessian eigenvalues and exposes the frozen-coefficient formulas as its $\mu\to0$ limit; and a quasi-static reduction for general floors at the local sharpness $\lambda(1+f'^2)$ with a geometric passband forcing, whose stated validity margin is the filter memory against the bend.
+The frozen stability diagnostic matches E10's measured confinement floors to grid resolution, and the $\beta$-free tracking offset is the geometric cost curvature exacts at every momentum.
+\item We separate what filtering does to the buffer from what reaches the update.
+The buffer theorems: the buffer's Nyquist disturbance dies at rate $1/\Teff$ (\Cref{thm:filterfirst})---deterministically, faster than the $\Teff^{-1/4}$ stochastic rate of \citet{li2026denoise}---with a band-limited generalization (\Cref{thm:bandlimited}) contracting any high-band disturbance by $\rhohigh(\beta)$ while tracking a slowly varying signal, and a band-energy corollary (\Cref{cor:bandenergy}) whose hypothesis is the disturbance stream's measured high-band energy fraction---the quantity HFER estimates.
+The update theorems: the recovery transfers to the update itself, at the same $1/\Teff$ rate, for the exact polar under a full-rank signal (\Cref{thm:polarupdate}) and---with no rank hypothesis---for the finite Newton--Schulz operator practical Muon deploys, at the explicit Lipschitz price $L_h\approx485$ (\Cref{thm:nsupdate}); the obstruction in between---exact polar erases amplitudes---is stated as a necessity example (\Cref{prop:polaronly}) fixing those two hypotheses as the admissible ones.
+\item We test the predictions in controlled settings (\Cref{sec:experiments}; \Cref{tab:map} maps results to tests, tags each row's statement class, and marks the one untested row---the update theorems' knee), led by a direct optimization-quality sweep in which the measured hill loss falls with $\beta$ by the predicted $\eta\lambda/2$ and only in the predicted regime (E9), with the $\beta$ window traced along both of its axes (conditioning and river curvature; E10) and the mechanism exposed to falsification by forced-disturbance controls whose outcome must follow frequency content, not $\beta$ (E13).
 A real two-layer network at the edge of stability \citep{cohen2021edge} carries the predicted Nyquist-concentrated gradient oscillation---emerging only once the iterate is confined to the valley (\Cref{sec:real})---optimizer-level tests (\Cref{sec:optimizer}) show the mechanism metrics predict closed-loop performance where $\beta$ alone cannot, including a closed-loop pre-polar versus post-polar Muon comparison, and mini-batch transformer training (\Cref{sec:scale}) shows hill-dominated streams at every stable learning rate, a momentum benefit that grows with the learning rate as the regime scaling predicts, and the filter-first advantage---while the toy-calibrated mechanism-score ranking does not transfer at this seed budget.
 A large-batch decomposition of the mini-batch stream (E12) tests the reading a filter theory must get right: it locates the high-band energy in the mean-loss gradient at the visited iterates, temporally white in the sampling residual, and concentrated on the probed matrix's top curvature directions.
 \end{itemize}
+\paragraph{Statement classes.} Every labeled claim in this paper carries one of four strengths: \emph{exact} (closed-form statements proved as displayed: the straight valley, the buffer theorems, the linear-floor curved valley, the update theorems); \emph{quasi-static} (frozen-coefficient reductions whose freezing hypotheses are stated and instrumented: \Cref{prop:curved}(c)); \emph{reading} (remarks that collect proved constants into an interpretation); and \emph{measured} (claims that exist only as experimental outcomes).
+\Cref{tab:map} tags the class of each result it maps to an experiment, and a statement of one class is never quoted as a member of a stronger one.
+
 Notation: gradients are written $g_t$ and live in a real Hilbert space $\Hbb$ (a vector $\Rbb^d$, or a matrix $\Rbb^{d_1\times d_2}$ with the Frobenius inner product); matrix-valued streams and their factors are set in bold.
 Metric definitions are collected in \Cref{sec:measurements}; all reported numbers are read from the cached run records.
 
@@ -113,6 +121,7 @@ The two controls are independent, and their joint schedule is untested (\Cref{se
 
 \paragraph{Momentum at the edge of stability.} The momentum-shifted stability threshold is known in sharpness form: gradient descent settles at sharpness $2/\eta$ \citep{cohen2021edge}, heavy-ball momentum at $2(1+\beta)/\eta_{\mathrm{HB}}$, with stochastic refinements in \citet{andreyev2026momentum} and a formal time-averaged trajectory theory in \citet{cohen2025central}.
 \Cref{prop:stability} derives the same threshold inside the river-valley hill map (the step-normalization conversion of \Cref{sec:ema} converts the two forms), and \Cref{prop:variance} adds what the sharpness literature does not state: the closed-form stationary hill variance under noise and its consequence that the trajectory-level benefit of momentum is specific to large $\eta\lambda$.
+\citet{lessard2016analysis} treat momentum's convergence rate as a robust-control problem on the same second-order system---the acceleration question this paper keeps separate from filtering (\Cref{sec:discussion})---and the noisy quadratic model of \citet{zhang2019noisy} is the closest precedent for our validation discipline: exact quadratic-model predictions, read against network training for shape and ordering rather than constants.
 
 \paragraph{Schedule-free methods.} \citet{song2025river} show that Schedule-Free AdamW \citep{defazio2024road} tracks the river with its fast iterates at the edge of stability and that larger $\beta_1$ suppresses the hill-oscillation variance, via a central-flow computation.
 Their mechanism is specific to the schedule-free update, where the instantaneous gradient enters the fast iterate scaled by $1-\beta$, shrinking the effective step; ours is spectral filtering of the gradient stream, stated for plain EMA momentum, with the frequency content of the stream made explicit.
@@ -338,6 +347,7 @@ $R$ & tube radius & \Cref{sec:valley}\\
 $q_{\mathrm{h}}$ & hill transient ratio $\eta\lambda-1$ & \Cref{thm:separation}\\
 $a_0$ & $\beta=0$ hill factor $1-\eta\lambda$ & \Cref{thm:spectrum}\\
 $k$; $a_{\mathrm{b}}$ & bend wavenumber; bend amplitude & \Cref{prop:curved}\\
+$c$; $\nu_1,\nu_2$ & linear-floor slope; its Hessian eigenvalues & \Cref{prop:curved}\\
 $\vriv$ & river speed & \Cref{sec:measurements}\\
 \midrule
 \multicolumn{3}{l}{\emph{Matrices and subspaces}}\\
@@ -351,6 +361,8 @@ $\delta_t$ & singular-value separation & \Cref{thm:filterfirst}\\
 $\Cbf_\omega,\Dbf_\omega$; $a,\alpha$ & band coefficients; low-, high-band amplitudes & \Cref{thm:bandlimited}\\
 $\gamma$; $E_A$; $\bar\rho$; $\tau$ & low-fraction bound; windowed energy; contraction; step fraction & \Cref{cor:bandenergy}\\
 $h(\cdot)$; $q$ & monotone singular-value map; power exponent & \Cref{rem:mapscope}\\
+$\Dcal_{\mathrm{NS}}$; $K$; $\psi$ & deployed NS operator; iteration count; NS polynomial & \Cref{eq:deployed}\\
+$h_{\mathrm{NS}}$; $L_h$; $\kappa$; $\varepsilon_{\mathrm{NS}}$ & scalar NS response; its slope bound; Frobenius floor; NS guard & \Cref{eq:deployed}; \Cref{thm:nsupdate}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -440,7 +452,7 @@ Gradient descent on the straight valley decouples into \Cref{eq:rv-recur}, and i
 \label{thm:separation}
 Assume the hill is in the oscillatory regime $1<\eta\lambda<2$ and the river is contractive $0<\eta\mu<1$; set $q_{\mathrm{h}}=\eta\lambda-1\in(0,1)$.
 Then the hill gradient is $g^{\mathrm{hill}}_t=\lambda y_0(-1)^t q_{\mathrm{h}}^t$, and for every nondegenerate window ($T\ge2$, $y_0\ne0$) its windowed transform $\lvert\hat g^{\mathrm{hill}}(\omega)\rvert$ is maximized uniquely at the Nyquist frequency $\omega=\pi$, while the river gradient $g^{\mathrm{river}}_t=\mu(x_0-x^\star)(1-\eta\mu)^t$ is maximized at $\omega=0$.
-Consequently momentum raises the river-to-hill energy ratio by a factor up to $((1+\beta)/(1-\beta))^2$.
+Consequently momentum raises the river-to-hill energy ratio by a factor up to $((1+\beta)/(1-\beta))^2$, in the open-loop, near-pure-tone limit; it is not a closed-loop guarantee (\Cref{sec:loop}).
 \end{theorem}
 
 \begin{proof}
@@ -457,7 +469,7 @@ The maximization is over continuous $\omega\in[0,\pi]$; on the length-$T$ DFT gr
 Applying \Cref{thm:filter} to a high band containing $\pi$ and a low band containing $0$, the hill is attenuated toward $\Hmag{\pi}=(1-\beta)/(1+\beta)$ while the river near DC is preserved ($\Hmag{0}=1$); the ratio of squared responses is $((1+\beta)/(1-\beta))^2$ in the pure-tone limit.
 \end{proof}
 
-For the curved valley $L(x,y)=\phi(x)+\tfrac{\lambda}{2}(y-f(x))^2$ with river floor $y=f(x)$, the same separation holds locally with two geometric corrections---a sharpened hill and a low-frequency forcing from the bend---made exact in \Cref{prop:curved} below, once the closed loop is in place.
+For the curved valley $L(x,y)=\phi(x)+\tfrac{\lambda}{2}(y-f(x))^2$ with river floor $y=f(x)$, the same separation holds locally with two geometric corrections---a sharpened hill and a low-frequency forcing from the bend---made quantitative in \Cref{prop:curved} below (exactly for the linear floor, quasi-statically for general floors), once the closed loop is in place.
 
 The noise-driven regime also generalizes the frequency separation beyond the edge of stability.
 The $\beta=0$ loop $y_{t+1}=a_0y_t-\eta\xi_t$ with $a_0=1-\eta\lambda$, $\lvert a_0\rvert<1$, emits the gradient stream $g_t=\lambda y_t+\xi_t$ that a momentum filter would see.
@@ -559,6 +571,7 @@ For the slow mode write the root as $1-\varsigma$: the root product $\beta$ forc
 
 At $\beta=0$ this recovers $\eta\lambda<2$; in sharpness form it is the heavy-ball edge-of-stability threshold $2(1+\beta)/\eta_{\mathrm{HB}}$ \citep{cohen2021edge,andreyev2026momentum}, which the conversion of \Cref{sec:ema} identifies with the display.
 Read at fixed $\eta$: momentum buys a factor $\Teff$ of stability headroom against the steepest hills.
+The same AR(2) is the heavy-ball second-order system whose rate-optimal tuning is the subject of the acceleration literature \citep{polyak1964momentum,lessard2016analysis}; convergence rate is not this paper's question, and open-loop filtering supplies none at DC (\Cref{sec:discussion}).
 
 \begin{proposition}[Stationary hill variance]
 \label{prop:variance}
@@ -582,8 +595,7 @@ At $\beta=0$ it is the classical SGD value $\eta\sigma^2/(\lambda(2-\eta\lambda)
 At fixed $\eta\lambda<2$ the momentum-to-SGD variance ratio is $(2-\eta\lambda)/(2-\eta\lambda/\Teff)$: bounded and modest at small $\eta\lambda$ ($0.85$ at $\eta\lambda=0.3$, large $\beta$)---recovering the observation that momentum changes little in the small-learning-rate stochastic regime---and unbounded as $\eta\lambda\to2$ ($0.10$ at $\eta\lambda=1.8$).
 For $2\le\eta\lambda<2\Teff$, SGD diverges while EMA momentum has finite variance $\approx\eta\sigma^2/(2\lambda)$.
 Combined with \Cref{prop:stability}: under sustained noise at a large learning rate, momentum extends the usable learning-rate range by $\Teff$ \emph{and} suppresses the stationary hill energy inside it, at river drift preserved to first order; the residual cost is the lag of \Cref{rem:tradeoff}.
-All constants are in the EMA normalization---in heavy-ball normalization at fixed $\eta_{\mathrm{HB}}$, the effective step along slow directions grows with $\beta$ and the small-$\eta\lambda$ conclusion inverts; the conventions coincide for scale-invariant (polar, normalized) updates but not for SGDM trajectories.
-The two normalizations are the same update under the conversion of \Cref{sec:ema}, so both are covered by the same formulas; which one is held fixed is part of every claim below, and E9 measures the sweep under both.
+All constants are in the EMA normalization; \Cref{cor:hb} restates stability and loss at fixed $\eta_{\mathrm{HB}}$, where the sweep direction inverts at small $\eta_{\mathrm{HB}}\lambda$.
 
 The variance statement becomes an optimization statement once read as a loss.
 
@@ -606,6 +618,27 @@ The loss ratio to $\beta=0$ tends to $(2-\eta\lambda)/2$.
 
 By the per-coordinate sum of \Cref{prop:variance}, the river coordinate contributes its own stationary term $\eta\sigma^2/(2(2-\eta\mu/\Teff))=\tfrac{\eta\sigma^2}{4}(1+\Ocal(\eta\mu))$, $\beta$-independent to first order: the measurable tail loss decreases in $\beta$ onto a $\beta$-independent noise floor, and the entire improvement lives in the hill term.
 This is the quantity E9 measures.
+
+The normalization scope of these statements takes theorem-level form.
+
+\begin{corollary}[Heavy-ball normalization]
+\label{cor:hb}
+Fix $\eta_{\mathrm{HB}}>0$ and sweep $\beta$ under the heavy-ball convention of \Cref{sec:ema}, i.e.\ run \Cref{eq:closedloop} at $\eta=\eta_{\mathrm{HB}}/(1-\beta)$.
+All formulas of \Cref{prop:stability,prop:variance,cor:hillloss,prop:forced} apply verbatim at that $\eta$, and read at fixed $\eta_{\mathrm{HB}}$:
+\begin{enumerate}
+\item[(a)] (stability) the loop is stable iff $\eta_{\mathrm{HB}}\lambda<2(1+\beta)$; for $\eta_{\mathrm{HB}}\lambda\ge2$ this requires $\beta>\eta_{\mathrm{HB}}\lambda/2-1$;
+\item[(b)] (stationary hill loss) $\mathbb{E}[\tfrac{\lambda}{2}y_\infty^2]=\eta_{\mathrm{HB}}\sigma^2/\bigl(2\,(1-\beta)\,(2-\eta_{\mathrm{HB}}\lambda/(1+\beta))\bigr)$ on the stable range, minimized at $\beta^\star=\max\bigl(0,\sqrt{\eta_{\mathrm{HB}}\lambda}-1\bigr)$: strictly increasing in $\beta$ for $\eta_{\mathrm{HB}}\lambda<1$, U-shaped with interior minimum for $1<\eta_{\mathrm{HB}}\lambda<4$;
+\item[(c)] (sweep direction) the direction of the $\beta$-sweep at fixed step parameter is convention-dependent---decreasing under EMA normalization (\Cref{cor:hillloss}), increasing under heavy-ball normalization whenever $\eta_{\mathrm{HB}}\lambda\le1$---while the guides and the stability boundary are convention-invariant.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+Substitute $\eta=\eta_{\mathrm{HB}}/(1-\beta)$ into \Cref{prop:stability} ($\eta\lambda<2\Teff\Leftrightarrow\eta_{\mathrm{HB}}\lambda<2(1+\beta)$) and into \Cref{cor:hillloss}, using $(1-\beta)\Teff=1+\beta$.
+The $\beta$-derivative of the denominator $(1-\beta)(2-\eta_{\mathrm{HB}}\lambda/(1+\beta))$ is $-2+2\eta_{\mathrm{HB}}\lambda/(1+\beta)^2$, negative for all $\beta\ge0$ iff $\eta_{\mathrm{HB}}\lambda\le1$ and vanishing at $(1+\beta^\star)^2=\eta_{\mathrm{HB}}\lambda$ otherwise; $\beta^\star$ lies in the stable range since $\sqrt{\eta_{\mathrm{HB}}\lambda}>\eta_{\mathrm{HB}}\lambda/2$ for $\eta_{\mathrm{HB}}\lambda<4$.
+\end{proof}
+
+Under scale-invariant direction maps (polar, normalized updates) the two conventions coincide up to the step size; for SGDM trajectories they do not, and which convention is held fixed is part of every claim below.
+E9's normalization ablation (\Cref{sec:e9}) measures the increasing sweep at $\eta_{\mathrm{HB}}\lambda=0.6$ and the decreasing EMA sweep from the same $\beta=0$ cell, both on their composed guides.
 
 \begin{remark}[Burn-in of the stationary comparison]
 \label{rem:burnin}
@@ -649,6 +682,7 @@ The $z$-transform of \Cref{eq:closedloop} with input $u$ gives $Y(z)=-\eta(1-\be
 It also fixes the negative controls a filtering mechanism must survive---remove a Nyquist tone, fail on a passband tone at every $\beta$, and \emph{hurt} at $\omega=\theta_\beta$---which E13 runs against these guides (\Cref{sec:e13}).
 
 The forced response also closes the curved valley, read on the hill offset $d_t$ at the local hill sharpness $\lambda_{\mathrm{loc}}$ (\Cref{sec:valley}).
+Three statements of three strengths carry it: an exact one-step identity for any floor, an exact solution for the linear floor, and a quasi-static reduction for general floors whose two hypotheses are stated rather than implied.
 
 \begin{proposition}[Curved-valley reduction]
 \label{prop:curved}
@@ -660,33 +694,57 @@ For $L(x,y)=\phi(x)+\tfrac{\lambda}{2}(y-f(x))^2$ with $f$ twice differentiable:
   +\eta f'(x_t)\,\phi'(x_t)-\tfrac12 f''(\zeta_t)\,\Delta x_t^2
   \]
 for some $\zeta_t$ between $x_t$ and $x_{t+1}$;
-\item[(b)] (frozen-coefficient reduction) under EMA momentum, if $f'$ is frozen at $f'_0$ over the filter memory, $d_t$ obeys \Cref{eq:closedloop} with $\lambda\to\lambda_{\mathrm{loc}}=\lambda(1+f_0'^2)$, forcing $u_j=-f'_0\,\phi'(x_j)$, and noise variance $\sigma^2(1+f_0'^2)$, up to the second-order remainder $-\tfrac12 f''(\zeta_t)(\eta m^x_t)^2$ of (a).
-For a linear floor $f(x)=cx$ ($f''=0$, $f'$ constant) nothing is frozen or truncated: the reduction is exact, and for every stable $\beta$
+\item[(b)] (exact solution, linear floor) for $f(x)=cx$ with $c\ne0$ and $\phi(x)=\tfrac{\mu}{2}(x-x^\star)^2$, $0<\mu<\lambda$, under EMA momentum with per-coordinate white noise of variance $\sigma^2$: let $\nu_1>\nu_2>0$ be the eigenvalues of the constant loss Hessian $\nabla^2L=\bigl(\begin{smallmatrix}\mu+\lambda c^2&-\lambda c\\-\lambda c&\lambda\end{smallmatrix}\bigr)$---real and distinct, with $\nu_1+\nu_2=\mu+\lambda_{\mathrm{loc}}$, $\nu_1\nu_2=\mu\lambda$, and $\nu_1\ge\max(\lambda_{\mathrm{loc}},\mu)$---and $\hat e_1,\hat e_2$ its orthonormal eigenvectors.
+The loop decouples exactly into two independent copies of \Cref{eq:closedloop}, mode $i$ at curvature $\nu_i$ with noise variance $\sigma^2$.
+Consequently it is stable iff $\eta\nu_1<2\Teff$, $\mathbb{E}[d_\infty]=0$, and, with the weights $b_i=\langle(-c,1),\hat e_i\rangle$ (so $b_1^2+b_2^2=1+c^2$),
+  \[
+  \operatorname{Var}(d_\infty)
+  =b_1^2\,\frac{\eta\sigma^2}{\nu_1\bigl(2-\eta\nu_1/\Teff\bigr)}
+  +b_2^2\,\frac{\eta\sigma^2}{\nu_2\bigl(2-\eta\nu_2/\Teff\bigr)},\qquad
+  b_1^2=\frac{(\lambda_{\mathrm{loc}}-\nu_2)^2}{(\lambda-\nu_2)(\nu_1-\nu_2)},\quad
+  b_2^2=\frac{(\nu_1-\lambda_{\mathrm{loc}})^2}{(\nu_1-\lambda)(\nu_1-\nu_2)},
+  \]
+with no cross term.
+If instead the river profile has constant slope, $\phi'\equiv\mathrm{const}$ (any $c$), then $d_t$ decouples exactly at sharpness $\lambda_{\mathrm{loc}}$ with noise variance $\sigma^2(1+c^2)$ and constant forcing, and for every stable $\beta$
   \[
   \mathbb{E}[d_\infty]=\frac{c\,\phi'}{\lambda_{\mathrm{loc}}},\qquad
   \operatorname{Var}(d_\infty)
-  =\frac{\eta\sigma^2}{\lambda\,\bigl(2-\eta\lambda_{\mathrm{loc}}/\Teff\bigr)} .
+  =\frac{\eta\sigma^2}{\lambda\,\bigl(2-\eta\lambda_{\mathrm{loc}}/\Teff\bigr)} ;
   \]
+\item[(c)] (quasi-static reduction, general $f$) if $f'$ is frozen at $f'_0$ over the filter memory \emph{and} the river path $\{x_j\}$ is treated as an exogenous deterministic input---the two hypotheses of this part---then $d_t$ obeys \Cref{eq:closedloop} with $\lambda\to\lambda_{\mathrm{loc}}=\lambda(1+f_0'^2)$, forcing $u_j=-f'_0\,\phi'(x_j)$, and noise variance $\sigma^2(1+f_0'^2)$, up to the second-order remainder $-\tfrac12 f''(\zeta_t)(\eta m^x_t)^2$ of (a).
 \end{enumerate}
 \end{proposition}
 
 \begin{proof}
 (a) $d_{t+1}=y_t-\eta\lambda d_t-f(x_t+\Delta x_t)$; Taylor with Lagrange remainder and $y_t-f(x_t)=d_t$ collect to the display.
-(b) The update gives $d_{t+1}=d_t-\eta\,(m^y_t-f'(x_t)\,m^x_t)-\tfrac12 f''(\zeta_t)(\eta m^x_t)^2$, and with $f'$ frozen the buffer combination is $m^y-f'_0m^x=\mathrm{EMA}_j\bigl[\lambda_{\mathrm{loc}}d_j-f'_0\phi'(x_j) +(\xi^y_j-f'_0\xi^x_j)\bigr]$, which is \Cref{eq:closedloop} for $d$ with the stated parameters ($\operatorname{Var}(\xi^y-f'_0\xi^x)=\sigma^2(1+f_0'^2)$) plus the retained remainder.
-For $f=cx$ the mean is the fixed point of the noise-free recursion---\Cref{prop:forced}(a) at the local hill sharpness---and the variance is \Cref{prop:variance} at $(\lambda_{\mathrm{loc}},\sigma^2(1+c^2))$, in which the $(1+c^2)$ factors cancel except inside the denominator.
+(b) $L$ is a quadratic form with constant Hessian; the discriminant of its characteristic polynomial is $(\lambda_{\mathrm{loc}}-\mu)^2+4c^2\lambda\mu>0$, giving the stated sum, product, and $\nu_1\ge\max(\lambda_{\mathrm{loc}},\mu)$.
+The joint update on $(w_t,m_{t-1})$ has blocks that are polynomials in $\nabla^2L$, so the orthonormal eigenbasis decouples it into two scalar loops, mode $i$ obeying \Cref{eq:closedloop} at curvature $\nu_i$; the rotated noise $Q^\top\xi$ is again iid with variance $\sigma^2$ per coordinate, so the modes are independent.
+Stability is \Cref{prop:stability} per mode, binding at $\nu_1$; the mean recursion is noise-free and contracts to the minimum, giving $\mathbb{E}[d_\infty]=0$.
+Writing $d=\langle(-c,1),w-w^\star\rangle=\sum_ib_ip_i$ in the modal coordinates $p_i$, independence gives $\operatorname{Var}(d_\infty)=\sum_ib_i^2\operatorname{Var}(p_{i,\infty})$ with \Cref{prop:variance} per mode; the weight formulas follow from the eigenvector components $\hat e_i\propto(\lambda c,\nu_{3-i}-\lambda)$ and the identity $(\nu_1-\lambda)(\lambda-\nu_2)=c^2\lambda^2$, and $b_1^2+b_2^2=\lVert(-c,1)\rVert^2$.
+For the constant-slope profile the $d$-combination of the gradient stream is $\lambda_{\mathrm{loc}}d_j-c\phi'+(\xi^y_j-c\xi^x_j)$, with no $x$-coupling: \Cref{eq:closedloop} at $(\lambda_{\mathrm{loc}},\sigma^2(1+c^2))$ under constant forcing, whose fixed point and variance are \Cref{prop:forced}(a) and \Cref{prop:variance}, the $(1+c^2)$ factors cancelling except inside the denominator.
+(c) The update gives $d_{t+1}=d_t-\eta\,(m^y_t-f'(x_t)\,m^x_t)-\tfrac12 f''(\zeta_t)(\eta m^x_t)^2$, and with $f'$ frozen and $\{x_j\}$ exogenous the buffer combination is $m^y-f'_0m^x=\mathrm{EMA}_j\bigl[\lambda_{\mathrm{loc}}d_j-f'_0\phi'(x_j) +(\xi^y_j-f'_0\xi^x_j)\bigr]$, which is \Cref{eq:closedloop} for $d$ with the stated parameters ($\operatorname{Var}(\xi^y-f'_0\xi^x)=\sigma^2(1+f_0'^2)$) plus the retained remainder.
 \end{proof}
 
-Three consequences carry the measurements.
-(i) \emph{Confinement floor}: frozen-coefficient stability requires $\eta\lambda(1+f'^2)<2\Teff$ pointwise, worst case $\eta\lambda(1+(a_{\mathrm{b}}k)^2)<2\Teff$ on $f(x)=a_{\mathrm{b}}\sin(kx)$, so the smallest admissible $\beta$ rises with the bend through the slope range $a_{\mathrm{b}}k$; this predicts E10's measured confinement floors exactly in $7$ of $10$ $(\eta\lambda,k)$ cells and to one grid step in the remaining $3$ (\Cref{sec:e10})---deviations in both directions, as befits a deterministic stability threshold read against a noise-driven escape criterion.
+\begin{remark}[Frozen coefficients against the exact solution]
+\label{rem:frozenexact}
+Part (c) freezes two things part (b) does not: the local sharpness and the stochasticity of the river coordinate.
+On the linear floor the price is explicit and $\Ocal(\mu)$: as $\mu\to0$ at fixed $c$, $\nu_1\to\lambda_{\mathrm{loc}}$, $b_2^2\to0$, and (b)'s variance converges to (c)'s value $\eta\sigma^2/(\lambda(2-\eta\lambda_{\mathrm{loc}}/\Teff))$ with first-order correction $\mu\,c^2\eta^3\sigma^2/\bigl(2(2\Teff-\eta\lambda_{\mathrm{loc}})^2\bigr)$.
+The frozen stability threshold has the same status: $\eta\lambda_{\mathrm{loc}}<2\Teff$ is necessary but not sufficient for (b)'s loop, whose exact boundary is $\eta\nu_1<2\Teff$ with $\nu_1=\lambda_{\mathrm{loc}}+\mu c^2/(1+c^2)+\Ocal(\mu^2/\lambda)$.
+On a general floor, pointwise frozen stability is therefore a hypothesis-level diagnostic, not a trajectory theorem; a global curved-valley statement remains open (\Cref{sec:discussion}).
+Part (c)'s freezing is admissible while the coefficient drift over one filter memory is small---$\Teff\,\vriv\,\lvert f''\rvert\lesssim\max(1,\lvert f'\rvert)$, i.e.\ $k\vriv\,\Teff\lesssim1$ on the sinusoidal floor---the hypothesis E10 measures against.
+\end{remark}
+
+Two consequences of the quasi-static part (c) carry the curved-valley measurements.
+(i) \emph{Confinement floor}: frozen stability requires $\eta\lambda(1+f'^2)<2\Teff$ pointwise, worst case $\eta\lambda(1+(a_{\mathrm{b}}k)^2)<2\Teff$ on $f(x)=a_{\mathrm{b}}\sin(kx)$, so the smallest admissible $\beta$ rises with the bend through the slope range $a_{\mathrm{b}}k$; this diagnostic---necessary, not sufficient, by \Cref{rem:frozenexact}---predicts E10's measured confinement floors exactly in $7$ of $10$ $(\eta\lambda,k)$ cells and to one grid step in the remaining $3$ (\Cref{sec:e10}), deviations in both directions.
 (ii) \emph{Tracking offset}: the geometric forcing $f'\phi'$ enters at the river's temporal frequencies ($\approx k\vriv$ at river speed $\vriv$)---passband content---so by \Cref{prop:forced}(a) its response $f'\phi'/\lambda_{\mathrm{loc}}$ is $\beta$-free: momentum removes the self-generated Nyquist bounce, not the geometric cost of curvature.
-(iii) \emph{Validity}: freezing $f'$ over the memory needs the coefficient drift $\Teff\,\vriv\,\lvert f''\rvert$ small against $\max(1,\lvert f'\rvert)$, i.e.\ $k\vriv\,\Teff\lesssim1$ on the sinusoid; where it fails the buffer lags the bend---the top edge of the $\beta$ window, whose closed-loop softening by river-speed collapse E10 measures.
-E8's bend correction $\lambda(1+\mathbb{E}[f'^2])$ is (b) read in expectation.
+Where part (c)'s drift hypothesis fails the buffer lags the bend---the top edge of the $\beta$ window, whose closed-loop softening by river-speed collapse E10 measures.
+E8's bend correction $\lambda(1+\mathbb{E}[f'^2])$ is (c) read in expectation.
 
 \begin{remark}[The $\beta$ window]
 \label{rem:window}
 Collecting the constants: filtering separates river from hill when the EMA memory sits between the hill relaxation time and the river traversal time, $\eta\mu\ll(1-\beta)/(1+\beta)\lesssim\eta\lambda$.
 The lower edge is where \Cref{prop:stability}'s slow-mode expansion and \Cref{thm:filter}(b)'s distortion $\epslow$ degrade; the upper edge is where \Cref{thm:spectrum}'s filtered-power gain saturates at the white floor $1/\Teff$.
-The window---hence the range of well-performing $\beta$---widens with the valley conditioning $\lambda/\mu$, and on a curved river it is squeezed from below as the bend sharpens the local hills ($\eta\lambda(1+f'^2)<2\Teff$, \Cref{prop:curved}; E10 measures both axes).
+The window---hence the range of well-performing $\beta$---widens with the valley conditioning $\lambda/\mu$, and on a curved river it is squeezed from below as the bend sharpens the local hills (the frozen diagnostic $\eta\lambda(1+f'^2)<2\Teff$ of \Cref{prop:curved}; E10 measures both axes).
 \end{remark}
 
 \section{Filter-First for Nonlinear Direction Maps}
@@ -700,9 +758,14 @@ Given a direction map $\Dcal$ such as the polar factor (\Cref{sec:svdtools}) and
 \end{equation}
 \citet{li2026denoise} prove, under a signal-plus-perturbation model $\Gbf_t=\Sbf_t+\Xibf_t$ with zero-mean, temporally orthogonal $\Xibf_t$, that filtering before $\polar(\cdot)$ enlarges the spectral gap of the matrix passed to the map and gives provably better alignment of $\polar(\Mbf_t)$ with the signal than the post-polar buffer (their averaging window equals $\Teff$ here; their perturbation tail decays at the stochastic rate $\Teff^{-1/4}$ in operator norm).
 Our temporal reading removes both assumptions for the disturbance the river valley actually emits: a deterministic Nyquist mode, which is neither mean-zero nor temporally orthogonal.
+The results come at two levels, kept apart throughout: \emph{buffer theorems} (\Cref{sec:buffer}) control $\Mbf_t$, the input to the map, exactly; \emph{update theorems} (\Cref{sec:update}) control the map's output, under the hypotheses that a necessity example shows cannot be dropped.
+
+\subsection{Buffer theorems}
+\label{sec:buffer}
+
 The buffer analysis is exact.
 
-\begin{theorem}[Deterministic filter-first]
+\begin{theorem}[Deterministic filter-first: the buffer]
 \label{thm:filterfirst}
 Let $\Gbf_t=\Sbf+(-1)^t\Abf$ with $\Sbf$ of rank $r$, $\sigma_r=\sigma_r(\Sbf)>0$, and $\Abf\ne0$.
 Then the momentum buffer is exactly
@@ -723,29 +786,7 @@ Moreover, for every $t$:
   \]
 which tends to $(\lVert\Abf\rVert_2/\Teff)/(\sigma_r-\lVert\Abf\rVert_2/\Teff)\to0$ as $\beta\to1$.
 \end{enumerate}
-Since $\polar(\Mbf_t)$ shares $\Mbf_t$'s singular subspaces, and by (a) $\Mbf_t$'s singular-value ordering identifies which $r$ of them carry the signal, the pre-polar update inherits the bound.
 \end{theorem}
-
-\begin{proof}
-The closed form follows by summing the EMA over the two-term stream; the envelope is direct.
-Write $\Mbf_t=\Xbf+\Ebf$, $\Xbf=(1-\beta^t)\Sbf$, $\Ebf=\varepsilon_t\Abf$.
-Weyl's inequalities (\Cref{sec:svdtools}) give the head bound and the tail upper bound; for the tail lower bound, $\sigma_{i+j-1}(\Pbf+\Qbf)\le\sigma_i(\Pbf)+\sigma_j(\Qbf)$ with $\Pbf=\Mbf_t$, $\Qbf=-\Xbf$, $i=j=r+1$ and $\sigma_{r+1}(\Xbf)=0$ give $\sigma_{2r+1}(\varepsilon_t\Abf)\le\sigma_{r+1}(\Mbf_t)$.
-For (b), apply Wedin's $\sin\Theta$ theorem (\Cref{sec:svdtools}) with base $\Mbf_t$ and comparison $\Xbf=\Mbf_t-\Ebf$: the residuals formed with $\Xbf$'s exact SVD are $\Mbf_t\Vbf_{\Sbf}-\Ubf_{\Sbf}\Sigmabf_{\Xbf}=\Ebf\Vbf_{\Sbf}$ and $\Mbf_t^\top\Ubf_{\Sbf}-\Vbf_{\Sbf}\Sigmabf_{\Xbf}=\Ebf^\top\Ubf_{\Sbf}$, and the separation is $\sigma_r(\Xbf)-\sigma_{r+1}(\Mbf_t)\ge\delta_t$ by (a).
-\end{proof}
-
-The disturbance amplitudes at which the two orders differ are characterized by an instance.
-
-\begin{proposition}[Polar-only misidentifies the signal subspace]
-\label{prop:polaronly}
-The polar output has all singular values equal to $1$, so under the rank-$r$ signal-recovery reading---the subspace metric of \Cref{sec:measurements} and Muon-style low-rank analyses---each pipeline's signal-subspace estimate is the singular-value ordering of the matrix it feeds to the map: $\Mbf_t$ for pre-polar, $\Gbf_t$ for polar-only.
-(Muon as used applies $\polar(\cdot)$ with no explicit subspace step; the operational content is that any rank-$r$ readout of its update must rely on that input ordering.)
-Take $\Sbf=\sigma_S\,\ubf\vbf^\top$ and $\Abf=\alpha\,\ubf'\vbf'^\top$ with $\ubf\perp\ubf'$, $\vbf\perp\vbf'$, $\alpha>\sigma_S$.
-Then for every $t$ the top singular subspace of $\Gbf_t$ is $\mathrm{span}(\ubf')$---the subspace error is $1$ identically---while the top subspace of $\Mbf_t$ is $\mathrm{span}(\ubf)$ for all $t$ with $\beta^t<(\sigma_S-\alpha/\Teff)/(\sigma_S+\alpha/\Teff)$, non-empty iff $\Teff>\alpha/\sigma_S$.
-\end{proposition}
-
-\begin{proof}
-By orthogonality $\Gbf_t$ has singular pairs $(\sigma_S,\ubf,\vbf)$ and $(\alpha,\ubf',\vbf')$, ordered by $\alpha>\sigma_S$; $\Mbf_t=(1-\beta^t)\sigma_S\,\ubf\vbf^\top+\varepsilon_t\alpha\,\ubf'\vbf'^\top$ likewise, with top pair $(\ubf,\vbf)$ iff $(1-\beta^t)\sigma_S>\lvert\varepsilon_t\rvert\alpha$; bounding $\lvert\varepsilon_t\rvert$ by its envelope gives the display.
-\end{proof}
 
 \begin{remark}[Post-polar limit]
 \label{rem:postpolar}
@@ -778,14 +819,6 @@ By \Cref{eq:pertone} the buffer decomposes exactly as $\Mbf_t=\Xbf_t+\tilde\Abf_
 \end{enumerate}
 If $\sigma_r>a$, then after $t\to\infty$ the bound in (c) tends to $\rhohigh\alpha/(\sigma_r-a-\rhohigh\alpha)$ and vanishes as $\beta\to1$ at fixed $\omega_c>0$ ($\rhohigh\to0$); for fixed $t$ it instead degrades as $\beta\to1$---the burn-in ordering ($t\gg\Teff$ first) is part of the statement, exactly as in \Cref{thm:filterfirst}.
 \end{theorem}
-
-\begin{proof}
-\Cref{eq:pertone} applied per tone gives the decomposition.
-(a): triangle inequality, $\lvert H_\beta\rvert\le\rhohigh$ on $\pm[\omega_c,\pi]$ (\Cref{thm:filter}), and $\lvert e^{i\omega t}-\beta^t\rvert\le1+\beta^t$.
-(b): per low tone, $\lvert H_\beta(e^{i\omega t}-\beta^t)-e^{i\omega t}\rvert\le\lvert H_\beta-1\rvert +\lvert H_\beta\rvert\beta^t\le\epslow+\beta^t$, plus the $\beta^t\Sbf$ term.
-(c): the range inclusions give $\mathrm{rank}(\Xbf_t)\le r$ with subspaces inside the signal's, and $\sigma_r(\Xbf_t)\ge(1-\beta^t)\sigma_r-(1+\beta^t)a$ by Weyl with $\lvert H_\beta\rvert\le1$; $\delta_t>0$ forces $\mathrm{rank}(\Xbf_t)=r$, so the subspaces coincide with the signal's.
-Weyl gives the two displays ($\sigma_{r+1}(\Xbf_t)=0$), and Wedin applies as in \Cref{thm:filterfirst}(b) with base $\Mbf_t$ and comparison $\Xbf_t=\Mbf_t-\tilde\Abf_t$: residual norms at most $\lVert\tilde\Abf_t\rVert_2$, separation $\sigma_r(\Xbf_t)-\sigma_{r+1}(\Mbf_t)\ge\delta_t$.
-\end{proof}
 
 \begin{remark}[Signal-to-disturbance gain, and scope]
 \label{rem:sdr}
@@ -824,12 +857,6 @@ Then $\Mbf_t=(1-\beta^t)\Sbf+\tilde\Abf_t$ with $\tilde\Abf_t=\mathrm{EMA}_\beta
 \end{enumerate}
 \end{corollary}
 
-\begin{proof}
-By the inverse DFT \Cref{eq:invdft}, $\Abf_j=\tfrac1T\sum_\ell\hat\Abf(\omega_\ell)e^{i\omega_\ell j}$ for $j=1,\dots,T$, so \Cref{eq:pertone} gives, exactly, $\tilde\Abf_t=\Phibf_t-\beta^t\Psibf$ with $\Phibf_t=\tfrac1T\sum_\ell H_\beta(\omega_\ell)e^{i\omega_\ell t}\hat\Abf(\omega_\ell)$ and $\Psibf=\tfrac1T\sum_\ell H_\beta(\omega_\ell)\hat\Abf(\omega_\ell)$.
-Orthogonality of the tones over $t=1,\dots,T$ and Parseval give $\sum_{t=1}^T\lVert\Phibf_t\rVert_F^2=\tfrac1T\sum_\ell\lvert H_\beta\rvert^2\lVert\hat\Abf\rVert_F^2 \le(\rhohigh^2+\gamma)E_A$, splitting at $\omega_c$ with $\lvert H_\beta\rvert\le\rhohigh$ on the high bins and $\le1$ on the low; per band, Cauchy--Schwarz with $\lvert\Omega\rvert\le T$ gives $\lVert\Psibf\rVert_F\le(\rhohigh+\sqrt\gamma)\sqrt{E_A}$; and $\sum_{t>T_0}\beta^{2t}\le\beta^{2(T_0+1)}/(1-\beta^2)$.
-(a) is the triangle inequality in $\ell^2(t)$; (b) is Markov over the scored window; (c) is Weyl and Wedin exactly as in \Cref{thm:filterfirst} with $\Xbf_t=(1-\beta^t)\Sbf$ ($\sigma_{r+1}(\Xbf_t)=0$).
-\end{proof}
-
 \begin{remark}[What the energy form buys and costs]
 \label{rem:bandenergy}
 The hypothesis is now measurable: $1-\gamma$ is the disturbance's high-band energy fraction and $\sqrt{E_A/T}$ its rms amplitude, so the corollary applies to any realized stream---stochastic ones included---through quantities the experiments record.
@@ -837,16 +864,107 @@ Two structural prices: per-step control degrades to most-steps control (a lone s
 For a white stream, $1-\gamma$ is only the high-band bin fraction and $\bar\rho$ stays order one: band \emph{elimination} requires band structure, and the sharp white constant remains the \Cref{cor:ceiling} ceiling.
 \end{remark}
 
-\begin{remark}[Scope of the direction map]
-\label{rem:mapscope}
-\Cref{thm:filterfirst,thm:bandlimited,cor:bandenergy} constrain the buffer $\Mbf_t$, the input to $\Dcal$; the polar factor enters only through two facts: $\polar(\Mbf_t)$ shares $\Mbf_t$'s singular subspaces, and the signal is read out of $\Mbf_t$'s singular-value ordering (\Cref{prop:polaronly}).
-Both facts hold for every map $\Mbf_t=\Ubf\Sigmabf\Vbf^\top\mapsto \Ubf\,h(\Sigmabf)\,\Vbf^\top$ with $h$ nonnegative and nondecreasing applied entrywise to the singular values: such a map carries $\Mbf_t$'s singular subspaces per index and maps a descending singular-value sequence to a descending one, so the subspace-identification conclusions transfer verbatim, with ties read from $\Mbf_t$'s input ordering exactly as in \Cref{prop:polaronly}.
-The polar factor is the flattest member, $h(\sigma)=1$ for $\sigma>0$; $h(\sigma)=\sigma$ recovers the raw buffer up to the step size; the powers $h(\sigma)=\sigma^{1-q}$, $q\in(0,1)$, interpolate---single-step Shampoo \citep{gupta2018shampoo}, its preconditioners built from the current gradient alone, realizes this family: exponent $-1/4$ per side is exactly the polar factor, and smaller per-side exponents give the intermediate powers.
-Trajectory-level consequences of the interpolation are outside this paper's scope (\Cref{sec:discussion}).
+\subsection{From the buffer to the update}
+\label{sec:update}
+
+The theorems above stop at the map's input, and for the exact polar factor that is a real boundary: $\polar(\cdot)$ flattens every nonzero singular value to $1$, erasing the amplitude information the buffer bounds control.
+Whether the buffer's recovery transfers to the update is a separate question with a sharp answer: no in general (\Cref{prop:polaronly}); yes, at the buffer rate, once either the signal has full rank (\Cref{thm:polarupdate}) or the map is the finite Newton--Schulz iteration Muon actually deploys (\Cref{thm:nsupdate}).
+
+\begin{proposition}[Exact polar transfers no amplitude]
+\label{prop:polaronly}
+Take $\Sbf=\sigma_S\,\ubf\vbf^\top$ and $\Abf=\alpha\,\ubf'\vbf'^\top$ with $\ubf\perp\ubf'$, $\vbf\perp\vbf'$, $\alpha>\sigma_S>0$, and read $\polar(\cdot)$ on a rank-deficient input in the partial-polar sense $\sum_{\sigma_i>0}\ubf_i\vbf_i^\top$ (the unitary polar factor is not unique there).
+Then for every $t$ and every $\beta\in[0,1)$,
+\[
+\polar(\Mbf_t)=\ubf\vbf^\top+\sign(\varepsilon_t)\,\ubf'\vbf'^\top,
+\qquad
+\lVert\polar(\Mbf_t)-\polar(\Sbf)\rVert_F=1 :
+\]
+the buffer disturbance dies at rate $1/\Teff$ (\Cref{thm:filterfirst}) while the update error does not move, so no bound on the exact-polar update in terms of the disturbance amplitude alone is possible for a rank-deficient signal---equivalently, the singular map $\sigma\mapsto\sign(\sigma)$ has no finite Lipschitz constant on any interval containing the occupied value $0$.
+On the same instance, $\polar(\Gbf_t)$ has top singular subspace $\mathrm{span}(\ubf')$ at every $t$: without the filter, even the input's singular-value ordering misidentifies the signal.
+\end{proposition}
+
+\begin{proof}
+$\Mbf_t=(1-\beta^t)\sigma_S\,\ubf\vbf^\top+\varepsilon_t\alpha\,\ubf'\vbf'^\top$ has orthogonal singular pairs, so its partial polar is the displayed two-term sign sum, and the difference from $\polar(\Sbf)=\ubf\vbf^\top$ is $\pm\ubf'\vbf'^\top$, of Frobenius norm $1$.
+$\Gbf_t$ has pairs $(\sigma_S,\ubf,\vbf)$ and $(\alpha,\ubf',\vbf')$, ordered by $\alpha>\sigma_S$.
+\end{proof}
+
+The example fixes the two admissible hypotheses, and each yields an update-level theorem.
+
+\begin{theorem}[Full-rank polar update]
+\label{thm:polarupdate}
+In the setting of \Cref{thm:filterfirst}, assume additionally $r=d_2$, i.e.\ $\sigma_{\min}(\Sbf)=\sigma_r>0$ (WLOG $d_1\ge d_2$).
+Whenever $(1-\beta^t)\sigma_r>\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_2$,
+\[
+\lVert\polar(\Mbf_t)-\polar(\Sbf)\rVert_F
+\;\le\;\frac{2\,\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_F}{\sigma_{\min}(\Mbf_t)+(1-\beta^t)\sigma_r}
+\;\le\;\frac{2\,\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_F}{2(1-\beta^t)\sigma_r-\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_2},
+\]
+so the update error dies at the buffer rate: as $t\to\infty$ it is at most $\lVert\Abf\rVert_F\,\bigl(1+\Ocal(1/\Teff)\bigr)/(\sigma_r\Teff)$, while polar-only obeys only the same bound with $\varepsilon_t$ replaced by $1$.
+\end{theorem}
+
+\begin{proof}
+$\polar(c\Mbf)=\polar(\Mbf)$ for $c>0$, so $\polar(\Sbf)=\polar((1-\beta^t)\Sbf)$.
+Apply the polar-factor perturbation bound of \citet{li1995polar} (also \citealp[Ch.~8]{higham2008functions}), $\lVert\polar(\Bbf_1)-\polar(\Bbf_2)\rVert_F\le2\,\lVert\Bbf_1-\Bbf_2\rVert_F/(\sigma_{\min}(\Bbf_1)+\sigma_{\min}(\Bbf_2))$ for full-column-rank arguments, to $\Bbf_1=\Mbf_t$ and $\Bbf_2=(1-\beta^t)\Sbf$ with $\lVert\Mbf_t-(1-\beta^t)\Sbf\rVert_F=\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_F$; Weyl's inequality bounds $\sigma_{\min}(\Mbf_t)\ge(1-\beta^t)\sigma_r-\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_2$.
+\end{proof}
+
+Practical Muon does not run the exact polar factor.
+It runs the \emph{deployed Newton--Schulz operator}
+\begin{equation}
+\label{eq:deployed}
+\Dcal_{\mathrm{NS}}(\Mbf)=\mathrm{NS}_K\Bigl(\tfrac{\Mbf}{\lVert\Mbf\rVert_F+\varepsilon_{\mathrm{NS}}}\Bigr),\qquad
+\mathrm{NS}(\Xbf)=\psi_1\Xbf+\psi_3\,\Xbf(\Xbf^\top\Xbf)+\psi_5\,\Xbf(\Xbf^\top\Xbf)^2,
+\end{equation}
+the $K$-fold composition of one odd matrix polynomial on the Frobenius-normalized buffer; the deployed instance is $K=5$, $(\psi_1,\psi_3,\psi_5)=(3.4445,\,-4.7750,\,2.0315)$, $\varepsilon_{\mathrm{NS}}=10^{-7}$ \citep{jordan2024muon}.
+Because the polynomial is odd, $\mathrm{NS}_K(\Xbf)=\Ubf\,h_{\mathrm{NS}}(\Sigmabf)\,\Vbf^\top$ in the input's own singular frame, with scalar response $h_{\mathrm{NS}}=\psi^{\circ K}$ for $\psi(\sigma)=\psi_1\sigma+\psi_3\sigma^3+\psi_5\sigma^5$: $h_{\mathrm{NS}}(0)=0$, and $h_{\mathrm{NS}}'(0)=\psi_1^K\approx485$---a finite slope at zero where the exact polar's is infinite.
+That finite slope is the entire content of the next result.
+
+\begin{lemma}[Odd matrix polynomials are scalar-Lipschitz in Frobenius norm]
+\label{lem:oddlip}
+Let $h$ be an odd real polynomial with $\lvert h'\rvert\le L$ on $[-s,s]$, acting on $\Xbf\in\Rbb^{d_1\times d_2}$ through its singular values, $h(\Ubf\Sigmabf\Vbf^\top)=\Ubf\,h(\Sigmabf)\,\Vbf^\top$ (equal to the odd matrix polynomial in $\Xbf$).
+Then $\lVert h(\Xbf)-h(\Ybf)\rVert_F\le L\,\lVert\Xbf-\Ybf\rVert_F$ whenever $\lVert\Xbf\rVert_2,\lVert\Ybf\rVert_2\le s$.
+(Proof in \Cref{app:proofs}, via the Hermitian dilation and the classical divided-difference bound.)
+\end{lemma}
+
+\begin{theorem}[Deployed Newton--Schulz update]
+\label{thm:nsupdate}
+Let $L_h=\sup_{[0,1]}\lvert h_{\mathrm{NS}}'\rvert$ ($=\psi_1^K\approx485$ for the deployed instance).
+For any $\Mbf,\Xbf$ with $\min(\lVert\Mbf\rVert_F,\lVert\Xbf\rVert_F)\ge\kappa>0$,
+\[
+\lVert\Dcal_{\mathrm{NS}}(\Mbf)-\Dcal_{\mathrm{NS}}(\Xbf)\rVert_F\;\le\;\frac{2\,L_h}{\kappa+\varepsilon_{\mathrm{NS}}}\,\lVert\Mbf-\Xbf\rVert_F .
+\]
+In the setting of \Cref{thm:filterfirst}---with no rank hypothesis on $\Sbf$---take $\Xbf_t=(1-\beta^t)\Sbf$ and $\kappa_t=(1-\beta^t)\lVert\Sbf\rVert_F-\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_F$: whenever $\kappa_t>0$,
+\[
+\lVert\Dcal_{\mathrm{NS}}(\Mbf_t)-\Dcal_{\mathrm{NS}}(\Xbf_t)\rVert_F
+\;\le\;\frac{2\,L_h\,\lvert\varepsilon_t\rvert\,\lVert\Abf\rVert_F}{\kappa_t+\varepsilon_{\mathrm{NS}}}
+\;\longrightarrow\;\frac{2\,L_h\,\lVert\Abf\rVert_F}{\lVert\Sbf\rVert_F\,\Teff}\,\bigl(1+o(1)\bigr)\quad(t\to\infty):
+\]
+the buffer's $1/\Teff$ recovery transfers to the update Muon actually computes, at the explicit price $L_h$.
+\end{theorem}
+
+\begin{proof}
+Normalization: $\nu(\Mbf)=\Mbf/(\lVert\Mbf\rVert_F+\varepsilon_{\mathrm{NS}})$ satisfies $\lVert\nu(\Mbf)-\nu(\Xbf)\rVert_F\le\tfrac{2}{\kappa+\varepsilon_{\mathrm{NS}}}\lVert\Mbf-\Xbf\rVert_F$ on $\{\lVert\cdot\rVert_F\ge\kappa\}$: write $\nu(\Mbf)-\nu(\Xbf)=\tfrac{\Mbf-\Xbf}{\lVert\Mbf\rVert_F+\varepsilon_{\mathrm{NS}}}+\Xbf\,\tfrac{\lVert\Xbf\rVert_F-\lVert\Mbf\rVert_F}{(\lVert\Mbf\rVert_F+\varepsilon_{\mathrm{NS}})(\lVert\Xbf\rVert_F+\varepsilon_{\mathrm{NS}})}$, bound the second factor's numerator by $\lVert\Mbf-\Xbf\rVert_F$ (reverse triangle inequality) and $\lVert\Xbf\rVert_F/(\lVert\Xbf\rVert_F+\varepsilon_{\mathrm{NS}})$ by $1$.
+Polynomial: \Cref{lem:oddlip} at $s=1$, since $\lVert\nu(\cdot)\rVert_2\le\lVert\nu(\cdot)\rVert_F<1$.
+Compose; in the displayed instance $\lVert\Mbf_t\rVert_F\ge\kappa_t$ and $\lVert\Xbf_t\rVert_F\ge\kappa_t$ by the triangle inequality, and $\lvert\varepsilon_t\rvert\to1/\Teff$.
+\end{proof}
+
+\begin{remark}[The constant and the knee]
+\label{rem:knee}
+$L_h$ is not decorative.
+$\mathrm{NS}_K$ is built to amplify small singular values back to order one, so a normalized disturbance component above ${\sim}1/L_h$ is re-amplified, and the update error decays slowly in $\Teff$ until the disturbance amplitude crosses the knee ${\sim}(\kappa+\varepsilon_{\mathrm{NS}})/(2L_h)$; below the knee the map is in its linear zone $h_{\mathrm{NS}}(\sigma)\approx\psi_1^K\sigma$ and the bound is tight to a small factor.
+Equivalently, the update-level recovery engages once $\Teff\gtrsim L_h\,\lVert\Abf\rVert_F/\lVert\Sbf\rVert_F$.
+The knee is the update-level quantity a practical Muon experiment must probe; the comparisons in this paper (E5, E7, E11) test pipeline orderings, not the knee (\Cref{sec:discussion}).
 \end{remark}
 
-Whenever momentum improves the signal-to-disturbance ratio before $\Dcal$---zero-mean noise, the Nyquist mode, or any band-limited disturbance above---$\Dcal(m_t)$ inherits the cleaner input.
-\Cref{sec:matrix} tests the deterministic case directly, with a hill term $(-1)^t\Abf$ that is high-frequency but not noise, and overlays the constants of \Cref{thm:filterfirst} on the measured traces.
+\begin{remark}[Scope of the direction map]
+\label{rem:mapscope}
+\Cref{thm:filterfirst,thm:bandlimited,cor:bandenergy} constrain the buffer $\Mbf_t$; their subspace-identification conclusions transfer to any map $\Mbf_t=\Ubf\Sigmabf\Vbf^\top\mapsto \Ubf\,h(\Sigmabf)\,\Vbf^\top$ with $h$ nonnegative and nondecreasing, since such a map carries $\Mbf_t$'s singular subspaces per index and preserves the singular-value ordering.
+The family contains the raw buffer ($h(\sigma)=\sigma$), the powers $h(\sigma)=\sigma^{1-q}$, $q\in(0,1)$---single-step Shampoo \citep{gupta2018shampoo}, its preconditioners built from the current gradient alone, realizes them: exponent $-1/4$ per side is exactly the polar factor, smaller per-side exponents the intermediate powers---and the exact polar as its flattest member.
+It does \emph{not} contain the deployed operator: $h_{\mathrm{NS}}$ is not monotone ($\psi'(1)=\psi_1+3\psi_3+5\psi_5\approx-0.72<0$, and $h_{\mathrm{NS}}'$ itself changes sign near $\sigma\approx0.006$), which is why \Cref{thm:nsupdate} replaces the ordering route by the Lipschitz route.
+Trajectory-level consequences of the power family are outside this paper's scope (\Cref{sec:discussion}).
+\end{remark}
+
+Whenever momentum improves the signal-to-disturbance ratio before $\Dcal$---zero-mean noise, the Nyquist mode, or any band-limited disturbance above---$\Dcal(m_t)$ receives the cleaner input, and \Cref{thm:polarupdate,thm:nsupdate} state exactly when the cleaner input becomes a cleaner update.
+\Cref{sec:matrix} tests the deterministic case at the buffer level, with a hill term $(-1)^t\Abf$ that is high-frequency but not noise, and overlays the constants of \Cref{thm:filterfirst} on the measured traces.
 
 \section{Controlled Experiments}
 \label{sec:experiments}
@@ -857,27 +975,29 @@ The measurements are defined first; \Cref{tab:map} pairs each theoretical result
 \begin{table}[t]
 \centering
 \caption{Theory-to-experiment map.
-Each row: the result, its falsifiable prediction, and the experiments that test it (E-labels as in the corresponding subsections; ``grid'' = the closed-loop grid of \Cref{sec:grid}).}
+Each row: the result, its statement class (\Cref{sec:intro}), its falsifiable prediction, and the experiments that test it (E-labels as in the corresponding subsections; ``grid'' = the closed-loop grid of \Cref{sec:grid}).}
 \label{tab:map}
 \small
-\begin{tabular}{l p{6.4cm} l}
+\begin{tabular}{l l p{5.6cm} l}
 \toprule
-result & prediction & test\\
+result & class & prediction & test\\
 \midrule
-\Cref{prop:transfer}, \Cref{thm:filter} & MSR tracks $\Hmag{\pi}^2$; exact transfer & E1, E4, E6\\
-\Cref{rem:boundary} & boundary weight $\Ocal(\Teff^2/T)$ & E4 (declared windows)\\
-\Cref{thm:separation} & hill peak at $\omega=\pi$, river at DC & E1, E4\\
-\Cref{thm:spectrum}, \Cref{cor:ceiling} & monotone spectrum; white ceiling $1/\Teff$; the high band is state, not residual & E3, E4, E12\\
-\Cref{lem:confinement} & high band appears at confinement & E6 (onset)\\
-\Cref{prop:stability} & divergence boundary at $\eta\lambda=2\Teff$ & E9, grid, E8, E11\\
-\Cref{prop:variance}, \Cref{cor:hillloss} & rms on the guide; hill loss falls by $\eta\lambda/2$ & E9, grid, E8\\
-\Cref{prop:forced} & tone response on $\lvert G_\beta\rvert$; passband $\beta$-free; resonance hurts & E13\\
-\Cref{prop:curved} & confinement floor at $\eta\lambda(1+(a_{\mathrm{b}}k)^2)=2\Teff$; bend-corrected rms & E10, E8\\
-\Cref{rem:burnin} & tail loss turns up once $\Teff\sim T$ & E9, E7\\
-\Cref{rem:window} & window widens with $\lambda/\mu$, narrows with bend $k$ & grid, E10\\
-\Cref{thm:filterfirst}, \Cref{prop:polaronly}, \Cref{thm:bandlimited} & pre-polar identifies the subspace; polar-only cannot & E5, E7, E11\\
-\Cref{cor:bandenergy} & band energies suffice; HFER estimates $1-\gamma$ & E12\\
-\Cref{rem:tradeoff} & best $\beta$ interior: the U-shape & E2, E7, E10\\
+\Cref{prop:transfer}, \Cref{thm:filter} & exact & MSR tracks $\Hmag{\pi}^2$; exact transfer & E1, E4, E6\\
+\Cref{rem:boundary} & exact & boundary weight $\Ocal(\Teff^2/T)$ & E4 (declared windows)\\
+\Cref{thm:separation} & exact & hill peak at $\omega=\pi$, river at DC & E1, E4\\
+\Cref{thm:spectrum}, \Cref{cor:ceiling} & exact & monotone spectrum; white ceiling $1/\Teff$; the high band is state, not residual & E3, E4, E12\\
+\Cref{lem:confinement} & exact & high band appears at confinement & E6 (onset)\\
+\Cref{prop:stability} & exact & divergence boundary at $\eta\lambda=2\Teff$ & E9, grid, E8, E11\\
+\Cref{prop:variance}, \Cref{cor:hillloss} & exact & rms on the guide; hill loss falls by $\eta\lambda/2$ & E9, grid, E8\\
+\Cref{cor:hb} & exact & at fixed $\eta_{\mathrm{HB}}$ the sweep reverses; optimum $\max(0,\sqrt{\eta_{\mathrm{HB}}\lambda}-1)$ & E9(f)\\
+\Cref{prop:forced} & exact & tone response on $\lvert G_\beta\rvert$; passband $\beta$-free; resonance hurts & E13\\
+\Cref{prop:curved} & exact (a,b); quasi-static (c) & confinement floor at $\eta\lambda(1+(a_{\mathrm{b}}k)^2)=2\Teff$; bend-corrected rms & E10, E8\\
+\Cref{rem:burnin} & exact & tail loss turns up once $\Teff\sim T$ & E9, E7\\
+\Cref{rem:window} & reading & window widens with $\lambda/\mu$, narrows with bend $k$ & grid, E10\\
+\Cref{thm:filterfirst}, \Cref{thm:bandlimited} & exact (buffer) & pre-polar identifies the subspace; polar-only cannot (\Cref{prop:polaronly}) & E5, E7, E11\\
+\Cref{thm:polarupdate}, \Cref{thm:nsupdate} & exact (update) & update error dies at $1/\Teff$ under the stated hypotheses; the knee of \Cref{rem:knee} & untested here (\Cref{sec:discussion})\\
+\Cref{cor:bandenergy} & exact (buffer) & band energies suffice; HFER estimates $1-\gamma$ & E12\\
+\Cref{rem:tradeoff} & reading & best $\beta$ interior: the U-shape & E2, E7, E10\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -901,8 +1021,14 @@ Lag is $1-\Align_\Rcal(m)$.
 \item \textbf{State stream / sampling residual}: in mini-batch training, the split $g^{\mathrm{mb}}_t=\bar g^{\mathrm{LB}}_t+\xi^{\mathrm{res}}_t$ into the mean-loss gradient at the visited iterate (estimated by a large-batch probe at the same iterate) and the sampling residual; the \textbf{high-band state share} is the high-band energy of $\bar g^{\mathrm{LB}}$ over the summed high-band energies of $\bar g^{\mathrm{LB}}$ and $\xi^{\mathrm{res}}$ (E12).
 \item \textbf{Curvature subspace}: span of the top-$k$ eigenvectors of the mean-loss Hessian restricted to the probed matrix, estimated by block power iteration at the probe-window midpoint; a stream splits into its projection onto this subspace and the complement (E12).
 \end{itemize}
-All figures are rendered from cached run records; each caption gives its source run identifier.
-Code and records live in \texttt{codebases/}: the \texttt{core/} library, the run drivers in \texttt{scripts/}, and the figure modules in \texttt{figures/}.
+\paragraph{Statistics and conventions.}
+Seed counts, window types, scored windows, and burn-in are declared per experiment; error bars are seed standard errors unless a caption states otherwise.
+Divergence counts as failure in every criterion: a diverged seed is never dropped from a mean, a cell containing one is never the baseline of a quoted percentage, and diverged cells are reported as such (E9, E11).
+Scored windows are long relative to the filter memory wherever a stationary formula is quoted (E9: at least $7.5\,\Teff$ at every $\beta$); where $\Teff$ approaches the window, the finite-window behavior is itself the prediction under test (\Cref{rem:burnin}).
+The high band is $\omega\ge0.6\pi$, fixed once here and never tuned per experiment; spectra use rectangular windows, matching the finite-window statements, except where a caption declares a Hann taper (E4).
+\paragraph{Reproducibility.}
+Every number in this paper is read from a cached run record (\texttt{config.json}, \texttt{metrics.json}, \texttt{arrays.npz}) keyed by the run identifier quoted in its caption; figures render from those records alone, never from re-runs.
+The code (\texttt{core/} library, run drivers, figure modules), the cached records, and per-figure provenance will be released as a public repository, version-tagged at submission.
 
 \subsection{Does larger $\beta$ improve river-valley optimization? (E9)}
 \label{sec:e9}
@@ -915,7 +1041,7 @@ At $\eta\lambda\in\{2.2,2.5\}$, $\beta=0$ cannot run at all while $\beta=0.9$ tr
 The hill loss scales as $\sigma^2$ (measured ratios $4.00$, $16.00$, $4.00$ against $4$, $16$, $4$ across $\sigma\in\{0.5,1,2\}$), and the tail total loss flattens onto the $\beta$-independent river noise floor of the per-coordinate sum in \Cref{prop:variance}.
 
 The normalization ablation makes the convention dependence concrete.
-At fixed $\eta_{\mathrm{HB}}$ with $\eta_{\mathrm{HB}}\lambda=0.6$, the same formula composed with the conversion of \Cref{sec:ema} predicts, and the run confirms, tail hill loss \emph{increasing} in $\beta$ (Spearman $+1.00$, on its guide in $10$ of $10$ cells, $0.086$ to $13.2$), while the EMA sweep sharing the same $\beta=0$ cell decreases ($0.086$ to $0.060$).
+At fixed $\eta_{\mathrm{HB}}$ with $\eta_{\mathrm{HB}}\lambda=0.6$---the strictly increasing regime of \Cref{cor:hb}---the composed formula predicts, and the run measures, tail hill loss \emph{increasing} in $\beta$ (Spearman $+1.00$, on its guide in $10$ of $10$ cells, $0.086$ to $13.2$), while the EMA sweep sharing the same $\beta=0$ cell decreases ($0.086$ to $0.060$).
 The guides and the stability boundary are convention-invariant---both sweeps sit on the same formulas; the \emph{direction} of the $\beta$ sweep is not.
 
 \begin{figure}[t]
@@ -937,8 +1063,8 @@ Source: run \texttt{beta\_opt\_sweep\_b10\_el6\_c3\_seeds16}.}
 The complementary question is why not $\beta\to1$, along the curvature axis of \Cref{rem:window}.
 On curved valleys $y=2\sin(kx)$ with the amplitude fixed and the bend wavenumber swept over $k\in\{0.3,0.6,0.9,1.2,1.8\}$ ($k=0.9$ is the E2/E8 landscape; $\lambda/\mu=100$, $\sigma=2$, $16$ seeds, scored over the traveling horizon $3/(\eta\mu)$, tube radius $2.5=1.25\,a_{\mathrm{b}}$ so that escape flags dynamical blow-up rather than marginal corner contact), three things happen as $k$ rises (\Cref{fig:e10}).
 First, the confinement floor---the smallest $\beta$ with escape frequency at most $0.25$---rises monotonically: $\beta=0.3$, $0.5$, $0.7$, $0.7$, $0.9$ at $\eta\lambda=1.8$ and $0.3$, $0.5$, $0.7$, $0.8$, $0.95$ at $\eta\lambda=2.5$.
-These floors are now predicted: the \Cref{prop:curved} worst-case threshold $\eta\lambda(1+(a_{\mathrm{b}}k)^2)<2\Teff$ reproduces the measured floor exactly in $7$ of the $10$ cells and to one grid step in the other $3$, with misses in both directions---a deterministic stability threshold read against a noise-driven escape criterion.
-Second, the $\beta$ window narrows, from six grid steps at $k=0.3$ to four ($\eta\lambda=1.8$) and three ($\eta\lambda=2.5$) at $k=1.8$---the curvature counterpart of the widening with conditioning in \Cref{sec:grid}.
+These floors are predicted by the frozen diagnostic: the \Cref{prop:curved} worst-case threshold $\eta\lambda(1+(a_{\mathrm{b}}k)^2)<2\Teff$ reproduces the measured floor exactly in $7$ of the $10$ cells and to one grid step in the other $3$, with misses in both directions---a quasi-static stability diagnostic read against a noise-driven escape criterion.
+Second, the window's floor-to-top span narrows, from six grid steps at $k=0.3$ to four ($\eta\lambda=1.8$) and three ($\eta\lambda=2.5$) at $k=1.8$---the curvature counterpart of the widening with conditioning in \Cref{sec:grid}; the joint escape-and-lag criterion is stricter still, and its collapse at $k=1.8$ is quantified below.
 Third, the travel-loss U-shape holds at every $k$: the best $\beta$ is interior and $\beta=0$ escapes at every cell, and at $\eta\lambda=1.8$, $k\ge0.9$ the $\beta=0.999$ arm costs at least $1.5\times$ the best.
 
 One prediction required correction, and the correction is itself a closed-loop statement.
@@ -980,96 +1106,11 @@ Source: run \texttt{forced\_controls\_sweep\_om4\_b7\_seeds12}.}
 \label{fig:e13}
 \end{figure}
 
-\subsection{Straight valley (E1)}
-\label{sec:e1}
-With $\mu=0.1$, $\lambda=10$, $\eta=0.18$ (so $\eta\lambda=1.8$), the hill gradient changes sign $72$ times at $\beta=0$.
-\Cref{fig:e1} and \Cref{tab:e1} report the outcome.
-On the gradient stream the buffer follows the filter bound of \Cref{thm:filter}: the hill suppression ratio decreases monotonically in $\beta$, the high-band momentum suppression ratio tracks $\Hmag{\pi}^2$, and the momentum river alignment exceeds the raw-gradient alignment for every $\beta>0$.
-The closed-loop trajectory follows \Cref{rem:closedloop} instead: the rms distance to the floor is smallest at $\beta=0.5$ and grows for $\beta\ge0.9$, worst at $\beta=0.99$, where the underdamped hill mode rings across the whole window.
-The open-loop attenuation and the closed-loop floor distance are optimized at different $\beta$, so filter attenuation alone does not predict the trajectory.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_e1_straight}
-\caption{Straight river valley (E1), $\beta\in\{0,0.5,0.9,0.95,0.99\}$, $\eta\lambda=1.8$, $T=200$.
-(a) iterate trajectories on the loss contour.
-(b) hill component over time: raw $g_{t,y}$ at $\beta=0$ and momentum $m_{t,y}$ at $\beta\in\{0.9,0.99\}$.
-(c) temporal spectrum of the hill component (rectangular window), high band $\omega\ge0.6\pi$ shaded.
-(d) hill suppression ratio HSR and momentum suppression ratio MSR versus $\beta$ with the $\Hmag{\pi}^2$ guide.
-(e) per-step river alignment of $g_t$ and $m_t$, averaged over $t$.
-(f) rms distance to the river floor.
-Source: run \texttt{straight\_valley\_trajectory\_eta0p18\_lam10\_T200}.}
-\label{fig:e1}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\caption{Straight valley (E1) by momentum coefficient.
-HSR, MSR, river alignment of the raw gradient $\Align_\Rcal(g)$ and of momentum $\Align_\Rcal(m)$, and rms floor distance $d_{\mathrm{rms}}$, against the Nyquist guide $\Hmag{\pi}^2$.
-Values from \texttt{metrics.json}.}
-\label{tab:e1}
-\begin{tabular}{lcccccc}
-\toprule
-$\beta$ & HSR & MSR & $\Hmag{\pi}^2$ & $\Align_\Rcal(g)$ & $\Align_\Rcal(m)$ & $d_{\mathrm{rms}}$\\
-\midrule
-$0$    & $1.00$  & $1.00$   & $1.00$   & $0.951$ & $0.951$ & $0.118$\\
-$0.5$  & $0.294$ & $0.130$  & $0.111$  & $0.978$ & $0.982$ & $0.082$\\
-$0.9$  & $0.0554$& $0.00327$& $0.00277$& $0.798$ & $0.929$ & $0.162$\\
-$0.95$ & $0.0277$& $0.000821$&$0.000657$&$0.214$ & $0.729$ & $0.226$\\
-$0.99$ & $0.00558$&$0.000410$&$0.0000253$&$0.141$&$0.665$ & $0.466$\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Curved valley (E2)}
-\label{sec:e2}
-With floor $f(x)=2\sin(0.9x)$ and $\eta\lambda=1.8$, river alignment to the live tangent rises from $0.136$ at $\beta=0$ to $0.991$ at $\beta=0.9$, then falls to $0.935$ at $\beta=0.99$ (\Cref{fig:e2}).
-The hill-normal energy of the buffer falls by about six orders of magnitude from $\beta=0$ to $\beta=0.9$, and the river-following lag is smallest at $\beta=0.9$ and grows again at $\beta=0.99$: larger $\beta$ removes hill energy but a too-large $\beta$ lags the bend.
-The optimum at moderate $\beta$ is the filtering--lag tradeoff of \Cref{rem:tradeoff}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_e2_curved}
-\caption{Curved river valley (E2), $f(x)=2\sin(0.9x)$, $\eta\lambda=1.8$, $T=300$.
-(a) filtered trajectories ($\beta\in\{0.9,0.95,0.99\}$) on the bending floor; the near-unstable $\beta=0$ baseline is off-scale and quantified in (b)--(d).
-(b) river alignment of $g_t$ and $m_t$ versus $\beta$.
-(c) hill-normal energy of $m_t$ versus $\beta$ (log).
-(d) river-following lag $1-\Align_\Rcal(m_t)$ versus $\beta$.
-Source: run \texttt{curved\_valley\_trajectory\_a2\_k0p9\_eta0p18\_T300}.}
-\label{fig:e2}
-\end{figure}
-
-\subsection{Noise (E3)}
-\label{sec:e3}
-Adding Gaussian, anisotropic-hill, and heavy-tailed gradient noise to the straight valley over $12$ seeds, the noise suppression ratio---the residual of $m_t$ against the filtered clean gradient---tracks the white-noise floor $1/\Teff$ (Gaussian: $0.330,0.053,0.026,0.0033$ at $\beta=0.5,0.9,0.95,0.99$ against $0.333,0.053,0.026,0.0050$), and momentum raises river alignment over the raw gradient for every $\beta$ and noise model (\Cref{fig:e3}).
-Comparing the buffer to the \emph{instantaneous} clean gradient instead yields a non-monotone ratio with a minimum at moderate $\beta$, because that comparison also carries the deterministic lag bias; the two readings separate the variance-reduction effect from the lag.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_e3_noise}
-\caption{Noisy straight valley (E3), $12$ seeds, $\sigma=2$.
-(a) noise suppression ratio NSR versus $\beta$ for three noise models with the $1/\Teff$ floor (log, error bars are seed std).
-(b) instantaneous-target ratio versus $\beta$.
-(c) river-alignment difference $\Align_\Rcal(m)-\Align_\Rcal(g)$ versus $\beta$.
-Source: run \texttt{noisy\_valley\_trajectory\_sig2p0\_seeds12\_eta0p18}.}
-\label{fig:e3}
-\end{figure}
-
-\subsection{Frequency-domain validation (E4)}
-\label{sec:e4}
-On fixed gradient streams we form $m=\mathrm{EMA}_\beta(g)$ and compare the empirical per-bin ratio $\lvert\hat m(\omega)\rvert/\lvert\hat g(\omega)\rvert$ with $\Hmag{\omega}$ (\Cref{fig:e4}).
-The weighted-median relative error on significant bins is below $0.001$ for a synthetic slow-plus-fast stream, below $0.003$ for a curved-valley hill stream, and at most $0.115$ for a straight-valley hill stream, where the early oscillation transient sits at the window boundary (\Cref{prop:transfer}).
-The high-band median ratios sit within $6\%$ of the Nyquist floor $(1-\beta)/(1+\beta)$ for the synthetic and curved streams and within $12\%$ for the boundary-affected straight stream.
-The straight-valley hill stream has no low-frequency energy, as \Cref{thm:separation} predicts.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{fig_e4_frequency}
-\caption{Empirical EMA transfer ratio versus theory (E4), $T=512$, Hann window.
-Each panel is a fixed input stream (synthetic, straight-valley hill, curved-valley hill); markers are the measured ratio $\lvert\hat m\rvert/\lvert\hat g\rvert$ on significant-energy bins, solid lines are $\Hmag{\omega}$, for $\beta\in\{0.5,0.9,0.95,0.99\}$ (log).
-Source: run \texttt{frequency\_validation\_spectral\_T512\_hann}.}
-\label{fig:e4}
-\end{figure}
+\subsection{Implementation checks (E1--E4)}
+\label{sec:implchecks}
+Four controlled checks verify the exact identities on the simulators that instantiate them; they are reported in full in \Cref{app:impl}: the straight- and curved-valley trajectory families (E1, E2), gradient-noise filtering against the $1/\Teff$ floor (E3), and the per-bin transfer ratio against $\Hmag{\omega}$ (E4).
+They are implementation checks in the sense of \Cref{tab:map}---they establish that the simulators realize the formulas (per-bin transfer ratio on $\Hmag{\omega}$ to relative error $0.001$ on synthetic streams; MSR on the $\Hmag{\pi}^2$ guide; NSR on the $1/\Teff$ floor; hill spectra peaked at $\omega=\pi$)---not independent evidence about neural networks.
+Their one forward-pointing observation: the open-loop attenuation and the closed-loop floor distance are optimized at different $\beta$ (E1; \Cref{fig:e8}c), the earliest form of the window story that E9, E10, and E13 test at trajectory level.
 
 \subsection{Matrix / Muon toy (E5)}
 \label{sec:matrix}
@@ -1253,8 +1294,8 @@ The probed matrix's per-step mini-batch gradient is recorded over a $256$-step m
 Three of the toy claims transfer, one transfers with a caveat, and one does not (\Cref{fig:e11}).
 First, the regime map: the raw mini-batch gradient stream of the probed matrix is hill-dominated at every stable learning rate---HFER $0.821$, $0.823$, $0.838$ at $\mathrm{lr}=0.05$, $0.1$, $0.2$ against a white-stream baseline of $0.402$; the word \emph{hill} in this claim is earned by the decomposition of \Cref{sec:e12}.
 Unlike the full-batch network of \Cref{sec:real}, there is no smooth sub-critical regime to find: mini-batch training holds the stream in the high band at every learning rate we could run, and E12 locates that high band in the mean-loss gradient's response on the top curvature directions, with the layer-restricted spectrum far below the edge.
-Second, the momentum benefit follows the regime scaling of \Cref{cor:hillloss}: the best-$\beta$ improvement in tail training loss over $\beta=0$ rises $0.8\%$, $3.5\%$, $11.9\%$, $21.8\%$ across the four learning rates.
-The best cell of the whole sweep is $(\mathrm{lr}=0.4,\beta=0.95)$ at $1.946$---a learning rate at which $\beta=0$ diverges on one of three seeds and its surviving runs sit among the worst cells ($2.488$).
+Second, the momentum benefit follows the regime scaling of \Cref{cor:hillloss}: on the three learning rates where every arm survives all seeds, the best-$\beta$ improvement in tail training loss over $\beta=0$ rises $0.8\%$, $3.5\%$, $11.9\%$.
+At $\mathrm{lr}=0.4$ the comparison changes kind rather than degree: counting divergence as failure, the $\beta=0$ arm fails (one of three seeds diverges; its surviving-seed mean $2.488$ is reported for context only, and no percentage is quoted against it), while the best cell of the whole sweep is the stabilized $(\mathrm{lr}=0.4,\beta=0.95)$ at $1.946$.
 The stabilized regime exists at scale, though the divergence boundary is seed-marginal rather than sharp at this batch size ($\beta=0.5$ survives with visible instability spikes).
 Third, filter-first: pre-polar beats post-polar at every $\beta$ at $\mathrm{lr}=0.05$ and at two of three at $\mathrm{lr}=0.2$, with polar-only mid-pack; the gaps (median $+0.02$, $+0.03$) are small against the diagnostic network's, consistent with both streams being hill-dominated and the probed layer being one of many.
 What does not transfer: the mechanism score that ranked the toy cells (\Cref{sec:optimizer}) does not resolve the small within-row loss spreads here (median within-row rank correlation $-0.09$ from a single probe seed).
@@ -1265,9 +1306,9 @@ Finally, the axis E7 could not separate: on this corpus the held-out loss tracks
 \centering
 \includegraphics[width=\linewidth]{fig_e11_scale}
 \caption{Mini-batch nanoGPT (E11): $0.40$M-parameter character-level GPT (upstream nanoGPT, unmodified), shakespeare\_char, batch $32\times128$, $T=2000$, EMA-SGDM on all parameters, no gradient clipping, $3$ seeds with seed-fixed batch order; probe window steps $1200$--$1455$ of the last block's MLP expansion gradient.
-(a) tail training loss (mean of the last $200$ steps) versus $\beta$ per learning rate; surviving-seed means, error bars seed std; legend entries carry the raw-stream HFER at $\beta=0$.
+(a) tail training loss (mean of the last $200$ steps) versus $\beta$ per learning rate; error bars seed std; the $(\mathrm{lr}{=}0.4,\beta{=}0)$ point is a surviving-seed mean over $2$ of $3$ seeds and is the one cell counted as failed in the body's divergence-counted criterion; legend entries carry the raw-stream HFER at $\beta=0$.
 (b) seed-0 loss curves at $\mathrm{lr}=0.4$; $\times$ marks the $\beta=0$ divergence.
-(c) best-$\beta$ benefit over $\beta=0$ (bars) and HFER$(\Gbf,\beta{=}0)$ (line) versus learning rate, white-stream baseline dashed.
+(c) best-$\beta$ benefit over $\beta=0$ (bars) for the learning rates whose $\beta=0$ arm survives all seeds, and HFER$(\Gbf,\beta{=}0)$ (line) versus learning rate, white-stream baseline dashed; at $\mathrm{lr}=0.4$ the $\beta=0$ baseline fails (one of three seeds) and no percentage is drawn.
 (d) Muon pre-/post-polar final loss at background $\mathrm{lr}\in\{0.2,0.05\}$, $\eta_o=0.02$, polar-only dashed per lr.
 Source: run \texttt{nanogpt\_closedloop\_lr4\_b6\_seeds3\_T2000}.}
 \label{fig:e11}
@@ -1304,21 +1345,158 @@ Source: run \texttt{nanogpt\_decomp\_lr3\_seeds3\_LB1024\_k16}.}
 \section{Discussion}
 \label{sec:discussion}
 
-The three views of momentum coincide once it is read as a temporal filter.
-Acceleration is the DC-pass behaviour $\Hmag{0}=1$ together with the effective step gain along persistent directions; denoising is the $1/\Teff$ attenuation of the broadband noise floor; and momentum additionally attenuates \emph{structured} high-frequency gradient components, of which the river-valley hill is the canonical example.
-\Cref{thm:filter} ties these together with explicit constants at the stream level; \Cref{prop:stability,prop:variance} carry them to the trajectory, where the benefit is a large-learning-rate effect under sustained excitation and the deterministic transient remains the caveat; and \Cref{prop:forced} completes the trajectory story frequency by frequency---removed at Nyquist, neutral in the passband, amplified at the loop's own mode---with E13 confirming all three arms on parameter-free guides.
+Two classical views of momentum meet in the temporal filter; the third is complementary, not identical.
+Denoising is the filter on a broadband stream---the $1/\Teff$ attenuation of the white floor (\Cref{cor:ceiling})---and this paper's reading is the filter fed by the landscape: \emph{structured} high-frequency components, of which the river-valley hill is the canonical example.
+Acceleration is not delivered by open-loop filtering: under EMA normalization the DC gain is exactly $\Hmag{0}=1$---a persistent gradient is passed, not amplified---and the $1/(1-\beta)$ gain of the heavy-ball convention is the normalization fact of \Cref{sec:ema}, not a rate mechanism.
+Condition-number acceleration arises from the tuned second-order dynamics of the coupled iterate--buffer system \citep{polyak1964momentum,sutskever2013momentum,lessard2016analysis}; the AR(2) of \Cref{eq:closedloop} is that system in the hill coordinate, so the two accounts share hardware while answering different questions---rate of contraction there; stationary error, stability margin, and frequency selectivity here.
+\Cref{thm:filter} states the filtering--lag pair with explicit constants at the stream level; \Cref{prop:stability,prop:variance} carry them to the trajectory, where the benefit is a large-learning-rate effect under sustained excitation and the deterministic transient remains the caveat; and \Cref{prop:forced} completes the trajectory story frequency by frequency---removed at Nyquist, neutral in the passband, amplified at the loop's own mode---the three arms E13 measures on parameter-free guides.
 \Cref{rem:tradeoff} and \Cref{rem:window} turn them into a design statement: the optimum $\beta$ balances high-frequency attenuation $\rhohigh(\beta)$ against low-frequency distortion $\epslow(\beta)$, within a window that widens with the valley conditioning and narrows with the river curvature.
-The direct sweep (E9) measures the improvement side of this statement at the predicted $\eta\lambda/2$; the curved valley (E2), the instantaneous-target reading of E3, the regime map (E8), and the bend-frequency sweep (E10) show the window side---its floor now predicted by \Cref{prop:curved}---including the closed-loop caveat that curvature is paid partly in river speed rather than lag.
-On schedules, E7's schedule arm sharpens the reading: every arm whose $\beta$ prefix sits below the confinement floor---the smallest $\beta$ that keeps the trajectory in the tube---loses badly (a linear ramp from $0$ by a factor $15$ against fixed $\beta=0.9$; thirty steps at $\beta=0$ before stepping to $0.9$ by a factor $118$), while floor-respecting warmup wins outright (a ramp from $0.7$ to $0.95$ beats every fixed $\beta$).
-Trajectory-triggered raises close the loop on this reading: starting at the floor, a confinement detector (ten consecutive in-tube steps) or a gradient-only proxy (the hill-gradient sign-flip fraction) fires at step ${\approx}11$ and lands with the fixed-$\beta$ arms ($0.83$ and $0.74$ against $0.75$ at fixed $\beta=0.9$), while the same detector started below the floor fires only at step ${\approx}201$ and loses by two orders of magnitude: adaptivity does not rescue a sub-floor start.
-The confinement onset (E6) supports raising $\beta$ once the iterate is confined; when to raise $\beta$ is a confinement question, not a clock question---and from where, the floor; among floor-respecting schedules the gradual ramp remains the best arm.
+The direct sweep (E9) measures the improvement side of this statement at the predicted $\eta\lambda/2$; the curved valley (E2), the instantaneous-target reading of E3, the regime map (E8), and the bend-frequency sweep (E10) show the window side---its floor predicted by \Cref{prop:curved}'s frozen diagnostic---including the closed-loop caveat that curvature is paid partly in river speed rather than lag.
+On schedules, the closed-loop reading yields a design constraint rather than a documented result: the confinement floor---the smallest $\beta$ that keeps the trajectory in the tube---is a lower bound any $\beta$ schedule must respect, and the confinement onset (E6) supports raising $\beta$ once the iterate is confined, so when to raise $\beta$ is a confinement question, not a clock question.
+A systematic study of $\beta$ schedules against the floor is left to separate work.
 \citet{shen2026muon} schedule the complementary control---the direction map, switched from the polar factor to AdamW at a fixed iteration; whether that switch is likewise a confinement question rather than a clock question, and how the two schedules compose, are untested.
 
-\paragraph{Limitations.} The closed-loop propositions are proved for the linear (straight-valley) hill; the curved valley now has the frozen-coefficient reduction of \Cref{prop:curved}---exact for linear floors and predictive for E10's confinement floors---but a global curved-valley theorem remains open, and the reduction's validity margin $k\vriv\,\Teff\lesssim1$ is itself the window's top edge.
-\Cref{thm:filterfirst,thm:bandlimited,cor:bandenergy} are statements about the buffer feeding the direction map---the honest scope for Muon-class updates---not nonlinear trajectory theorems, and they exclude Nesterov momentum, as does \citet{li2026denoise}; the Muon comparisons here probe one matrix in small models, not practical Muon training (Newton--Schulz orthogonalization, all matrix layers, tuned baselines).
+\paragraph{Limitations.} The closed-loop propositions are proved for the linear (straight-valley) hill; the curved valley now has \Cref{prop:curved}---exact for the linear floor, where the loop is two straight loops at the Hessian eigenvalues, and quasi-static for general floors with its two hypotheses stated and E10-calibrated---but a global curved-valley theorem remains open, and the quasi-static validity margin $k\vriv\,\Teff\lesssim1$ is itself the window's top edge.
+\Cref{thm:filterfirst,thm:bandlimited,cor:bandenergy} are statements about the buffer feeding the direction map, and \Cref{thm:polarupdate,thm:nsupdate} carry the recovery to the map's output under their stated hypotheses (full rank, or the deployed Newton--Schulz operator with its Lipschitz price)---none are nonlinear trajectory theorems, and all exclude Nesterov momentum, as does \citet{li2026denoise}; the Muon comparisons here probe one matrix in small models with the exact polar, so the deployed-operator constants ($L_h$, the knee of \Cref{rem:knee}) and practical Muon training (all matrix layers, tuned baselines, Newton--Schulz at scale) remain unmeasured.
 The real-network evidence is one small full-batch network (E6, E7) and one $0.40$M-parameter mini-batch transformer (E11--E12): the hill-dominated stream---now decomposition-verified---the regime scaling of the benefit, the (seed-marginal) shifted stability boundary, and the filter-first ordering persist at that scale, while the within-regime mechanism-score ranking does not.
-\Cref{prop:variance} assumes additive, state-independent white noise, which mini-batch noise is not: E12 verifies the temporal whiteness of the sampling residual at this scale, not state-independence or isotropy, so the closed-form constants remain model statements there.
-Production scale, Adam-preconditioned updates, learning-rate schedules, and trajectory-level behavior of the \Cref{rem:mapscope} family remain untested, and are the runs the Integration Contract makes cheap.
+\Cref{prop:variance} assumes additive, state-independent white noise, which mini-batch noise is not: E12 verifies the temporal whiteness of the sampling residual at this scale, not state-independence or isotropy, so the closed-form constants remain model statements there; whiteness itself is read from the flat spectrum and HFER at the single predeclared cutoff---autocorrelation-test batteries and cutoff sweeps are not run at this scale.
+Production scale, Adam-preconditioned updates, learning-rate schedules, and trajectory-level behavior of the \Cref{rem:mapscope} family remain untested.
+
+\appendix
+
+\section{Deferred Proofs}
+\label{app:proofs}
+
+\begin{proof}[Proof of \Cref{thm:filterfirst}]
+The closed form follows by summing the EMA over the two-term stream; the envelope is direct.
+Write $\Mbf_t=\Xbf+\Ebf$, $\Xbf=(1-\beta^t)\Sbf$, $\Ebf=\varepsilon_t\Abf$.
+Weyl's inequalities (\Cref{sec:svdtools}) give the head bound and the tail upper bound; for the tail lower bound, $\sigma_{i+j-1}(\Pbf+\Qbf)\le\sigma_i(\Pbf)+\sigma_j(\Qbf)$ with $\Pbf=\Mbf_t$, $\Qbf=-\Xbf$, $i=j=r+1$ and $\sigma_{r+1}(\Xbf)=0$ give $\sigma_{2r+1}(\varepsilon_t\Abf)\le\sigma_{r+1}(\Mbf_t)$.
+For (b), apply Wedin's $\sin\Theta$ theorem (\Cref{sec:svdtools}) with base $\Mbf_t$ and comparison $\Xbf=\Mbf_t-\Ebf$: the residuals formed with $\Xbf$'s exact SVD are $\Mbf_t\Vbf_{\Sbf}-\Ubf_{\Sbf}\Sigmabf_{\Xbf}=\Ebf\Vbf_{\Sbf}$ and $\Mbf_t^\top\Ubf_{\Sbf}-\Vbf_{\Sbf}\Sigmabf_{\Xbf}=\Ebf^\top\Ubf_{\Sbf}$, and the separation is $\sigma_r(\Xbf)-\sigma_{r+1}(\Mbf_t)\ge\delta_t$ by (a).
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:bandlimited}]
+\Cref{eq:pertone} applied per tone gives the decomposition.
+(a): triangle inequality, $\lvert H_\beta\rvert\le\rhohigh$ on $\pm[\omega_c,\pi]$ (\Cref{thm:filter}), and $\lvert e^{i\omega t}-\beta^t\rvert\le1+\beta^t$.
+(b): per low tone, $\lvert H_\beta(e^{i\omega t}-\beta^t)-e^{i\omega t}\rvert\le\lvert H_\beta-1\rvert +\lvert H_\beta\rvert\beta^t\le\epslow+\beta^t$, plus the $\beta^t\Sbf$ term.
+(c): the range inclusions give $\mathrm{rank}(\Xbf_t)\le r$ with subspaces inside the signal's, and $\sigma_r(\Xbf_t)\ge(1-\beta^t)\sigma_r-(1+\beta^t)a$ by Weyl with $\lvert H_\beta\rvert\le1$; $\delta_t>0$ forces $\mathrm{rank}(\Xbf_t)=r$, so the subspaces coincide with the signal's.
+Weyl gives the two displays ($\sigma_{r+1}(\Xbf_t)=0$), and Wedin applies as in \Cref{thm:filterfirst}(b) with base $\Mbf_t$ and comparison $\Xbf_t=\Mbf_t-\tilde\Abf_t$: residual norms at most $\lVert\tilde\Abf_t\rVert_2$, separation $\sigma_r(\Xbf_t)-\sigma_{r+1}(\Mbf_t)\ge\delta_t$.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{cor:bandenergy}]
+By the inverse DFT \Cref{eq:invdft}, $\Abf_j=\tfrac1T\sum_\ell\hat\Abf(\omega_\ell)e^{i\omega_\ell j}$ for $j=1,\dots,T$, so \Cref{eq:pertone} gives, exactly, $\tilde\Abf_t=\Phibf_t-\beta^t\Psibf$ with $\Phibf_t=\tfrac1T\sum_\ell H_\beta(\omega_\ell)e^{i\omega_\ell t}\hat\Abf(\omega_\ell)$ and $\Psibf=\tfrac1T\sum_\ell H_\beta(\omega_\ell)\hat\Abf(\omega_\ell)$.
+Orthogonality of the tones over $t=1,\dots,T$ and Parseval give $\sum_{t=1}^T\lVert\Phibf_t\rVert_F^2=\tfrac1T\sum_\ell\lvert H_\beta\rvert^2\lVert\hat\Abf\rVert_F^2 \le(\rhohigh^2+\gamma)E_A$, splitting at $\omega_c$ with $\lvert H_\beta\rvert\le\rhohigh$ on the high bins and $\le1$ on the low; per band, Cauchy--Schwarz with $\lvert\Omega\rvert\le T$ gives $\lVert\Psibf\rVert_F\le(\rhohigh+\sqrt\gamma)\sqrt{E_A}$; and $\sum_{t>T_0}\beta^{2t}\le\beta^{2(T_0+1)}/(1-\beta^2)$.
+(a) is the triangle inequality in $\ell^2(t)$; (b) is Markov over the scored window; (c) is Weyl and Wedin exactly as in \Cref{thm:filterfirst} with $\Xbf_t=(1-\beta^t)\Sbf$ ($\sigma_{r+1}(\Xbf_t)=0$).
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:oddlip}]
+Write $H(\Xbf)=\bigl(\begin{smallmatrix}\zerobf&\Xbf\\\Xbf^\top&\zerobf\end{smallmatrix}\bigr)$, the Hermitian dilation.
+Odd powers preserve the off-diagonal structure, $H(\Xbf)^{2j+1}=H\bigl(\Xbf(\Xbf^\top\Xbf)^{j}\bigr)$, so $h(H(\Xbf))=H(h(\Xbf))$ for every odd polynomial $h$, and the eigenvalues of $H(\Xbf)$ are $\pm\sigma_i(\Xbf)$ together with $\lvert d_1-d_2\rvert$ zeros---all in $[-s,s]$ when $\lVert\Xbf\rVert_2\le s$.
+Now let $\Pbf,\Qbf$ be Hermitian with spectra in $[-s,s]$ and spectral decompositions $\Pbf=\sum_i\lambda_iP_i$, $\Qbf=\sum_j\mu_jQ_j$.
+The blocks $\Zbf\mapsto P_i\Zbf Q_j$ are Frobenius-orthogonal, and
+\[
+P_i\bigl(h(\Pbf)-h(\Qbf)\bigr)Q_j=\bigl(h(\lambda_i)-h(\mu_j)\bigr)P_iQ_j,
+\qquad
+P_i(\Pbf-\Qbf)Q_j=(\lambda_i-\mu_j)\,P_iQ_j,
+\]
+so the scalar bound $\lvert h(\lambda_i)-h(\mu_j)\rvert\le L\lvert\lambda_i-\mu_j\rvert$ controls each block, and summing squares over $(i,j)$ gives $\lVert h(\Pbf)-h(\Qbf)\rVert_F\le L\lVert\Pbf-\Qbf\rVert_F$---the divided-difference bound, classical in the Hilbert--Schmidt norm \citep{bhatia1997matrix}.
+Apply it to $\Pbf=H(\Xbf)$, $\Qbf=H(\Ybf)$; the factor $\lVert H(\Xbf)-H(\Ybf)\rVert_F=\sqrt2\,\lVert\Xbf-\Ybf\rVert_F$ appears on both sides and cancels.
+\end{proof}
+
+\section{Implementation Checks (E1--E4)}
+\label{app:impl}
+
+The four checks summarized in \Cref{sec:implchecks}, with their figures and tables; measurements as defined in \Cref{sec:measurements}.
+
+\subsection{Straight valley (E1)}
+\label{sec:e1}
+With $\mu=0.1$, $\lambda=10$, $\eta=0.18$ (so $\eta\lambda=1.8$), the hill gradient changes sign $72$ times at $\beta=0$.
+\Cref{fig:e1} and \Cref{tab:e1} report the outcome.
+On the gradient stream the buffer follows the filter bound of \Cref{thm:filter}: the hill suppression ratio decreases monotonically in $\beta$, the high-band momentum suppression ratio tracks $\Hmag{\pi}^2$, and the momentum river alignment exceeds the raw-gradient alignment for every $\beta>0$.
+The closed-loop trajectory follows \Cref{rem:closedloop} instead: the rms distance to the floor is smallest at $\beta=0.5$ and grows for $\beta\ge0.9$, worst at $\beta=0.99$, where the underdamped hill mode rings across the whole window.
+The open-loop attenuation and the closed-loop floor distance are optimized at different $\beta$, so filter attenuation alone does not predict the trajectory.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_e1_straight}
+\caption{Straight river valley (E1), $\beta\in\{0,0.5,0.9,0.95,0.99\}$, $\eta\lambda=1.8$, $T=200$.
+(a) iterate trajectories on the loss contour.
+(b) hill component over time: raw $g_{t,y}$ at $\beta=0$ and momentum $m_{t,y}$ at $\beta\in\{0.9,0.99\}$.
+(c) temporal spectrum of the hill component (rectangular window), high band $\omega\ge0.6\pi$ shaded.
+(d) hill suppression ratio HSR and momentum suppression ratio MSR versus $\beta$ with the $\Hmag{\pi}^2$ guide.
+(e) per-step river alignment of $g_t$ and $m_t$, averaged over $t$.
+(f) rms distance to the river floor.
+Source: run \texttt{straight\_valley\_trajectory\_eta0p18\_lam10\_T200}.}
+\label{fig:e1}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Straight valley (E1) by momentum coefficient.
+HSR, MSR, river alignment of the raw gradient $\Align_\Rcal(g)$ and of momentum $\Align_\Rcal(m)$, and rms floor distance $d_{\mathrm{rms}}$, against the Nyquist guide $\Hmag{\pi}^2$.
+Values from \texttt{metrics.json}.}
+\label{tab:e1}
+\begin{tabular}{lcccccc}
+\toprule
+$\beta$ & HSR & MSR & $\Hmag{\pi}^2$ & $\Align_\Rcal(g)$ & $\Align_\Rcal(m)$ & $d_{\mathrm{rms}}$\\
+\midrule
+$0$    & $1.00$  & $1.00$   & $1.00$   & $0.951$ & $0.951$ & $0.118$\\
+$0.5$  & $0.294$ & $0.130$  & $0.111$  & $0.978$ & $0.982$ & $0.082$\\
+$0.9$  & $0.0554$& $0.00327$& $0.00277$& $0.798$ & $0.929$ & $0.162$\\
+$0.95$ & $0.0277$& $0.000821$&$0.000657$&$0.214$ & $0.729$ & $0.226$\\
+$0.99$ & $0.00558$&$0.000410$&$0.0000253$&$0.141$&$0.665$ & $0.466$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Curved valley (E2)}
+\label{sec:e2}
+With floor $f(x)=2\sin(0.9x)$ and $\eta\lambda=1.8$, river alignment to the live tangent rises from $0.136$ at $\beta=0$ to $0.991$ at $\beta=0.9$, then falls to $0.935$ at $\beta=0.99$ (\Cref{fig:e2}).
+The hill-normal energy of the buffer falls by about six orders of magnitude from $\beta=0$ to $\beta=0.9$, and the river-following lag is smallest at $\beta=0.9$ and grows again at $\beta=0.99$: larger $\beta$ removes hill energy but a too-large $\beta$ lags the bend.
+The optimum at moderate $\beta$ is the filtering--lag tradeoff of \Cref{rem:tradeoff}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_e2_curved}
+\caption{Curved river valley (E2), $f(x)=2\sin(0.9x)$, $\eta\lambda=1.8$, $T=300$.
+(a) filtered trajectories ($\beta\in\{0.9,0.95,0.99\}$) on the bending floor; the near-unstable $\beta=0$ baseline is off-scale and quantified in (b)--(d).
+(b) river alignment of $g_t$ and $m_t$ versus $\beta$.
+(c) hill-normal energy of $m_t$ versus $\beta$ (log).
+(d) river-following lag $1-\Align_\Rcal(m_t)$ versus $\beta$.
+Source: run \texttt{curved\_valley\_trajectory\_a2\_k0p9\_eta0p18\_T300}.}
+\label{fig:e2}
+\end{figure}
+
+\subsection{Noise (E3)}
+\label{sec:e3}
+Adding Gaussian, anisotropic-hill, and heavy-tailed gradient noise to the straight valley over $12$ seeds, the noise suppression ratio---the residual of $m_t$ against the filtered clean gradient---tracks the white-noise floor $1/\Teff$ (Gaussian: $0.330,0.053,0.026,0.0033$ at $\beta=0.5,0.9,0.95,0.99$ against $0.333,0.053,0.026,0.0050$), and momentum raises river alignment over the raw gradient for every $\beta$ and noise model (\Cref{fig:e3}).
+Comparing the buffer to the \emph{instantaneous} clean gradient instead yields a non-monotone ratio with a minimum at moderate $\beta$, because that comparison also carries the deterministic lag bias; the two readings separate the variance-reduction effect from the lag.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_e3_noise}
+\caption{Noisy straight valley (E3), $12$ seeds, $\sigma=2$.
+(a) noise suppression ratio NSR versus $\beta$ for three noise models with the $1/\Teff$ floor (log, error bars are seed std).
+(b) instantaneous-target ratio versus $\beta$.
+(c) river-alignment difference $\Align_\Rcal(m)-\Align_\Rcal(g)$ versus $\beta$.
+Source: run \texttt{noisy\_valley\_trajectory\_sig2p0\_seeds12\_eta0p18}.}
+\label{fig:e3}
+\end{figure}
+
+\subsection{Frequency-domain validation (E4)}
+\label{sec:e4}
+On fixed gradient streams we form $m=\mathrm{EMA}_\beta(g)$ and compare the empirical per-bin ratio $\lvert\hat m(\omega)\rvert/\lvert\hat g(\omega)\rvert$ with $\Hmag{\omega}$ (\Cref{fig:e4}).
+The weighted-median relative error on significant bins is below $0.001$ for a synthetic slow-plus-fast stream, below $0.003$ for a curved-valley hill stream, and at most $0.115$ for a straight-valley hill stream, where the early oscillation transient sits at the window boundary (\Cref{prop:transfer}).
+The high-band median ratios sit within $6\%$ of the Nyquist floor $(1-\beta)/(1+\beta)$ for the synthetic and curved streams and within $12\%$ for the boundary-affected straight stream.
+The straight-valley hill stream has no low-frequency energy, as \Cref{thm:separation} predicts.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_e4_frequency}
+\caption{Empirical EMA transfer ratio versus theory (E4), $T=512$, Hann window.
+Each panel is a fixed input stream (synthetic, straight-valley hill, curved-valley hill); markers are the measured ratio $\lvert\hat m\rvert/\lvert\hat g\rvert$ on significant-energy bins, solid lines are $\Hmag{\omega}$, for $\beta\in\{0.5,0.9,0.95,0.99\}$ (log).
+Source: run \texttt{frequency\_validation\_spectral\_T512\_hann}.}
+\label{fig:e4}
+\end{figure}
 
 \bibliography{references}
 \bibliographystyle{abbrvnat}

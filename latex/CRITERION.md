@@ -59,11 +59,26 @@ One phrasing per concept; use it everywhere.
 | tone falsification arms | forced-disturbance controls | Sec. E13 |
 | spectral maps covered by the buffer theorems | monotone singular-value map $\Ubf\,h(\Sigmabf)\Vbf^\top$, $h\ge0$ nondecreasing | Rem. (mapscope) |
 | interpolation between raw buffer and polar factor | power family $\sigma\mapsto\sigma^{1-q}$ | Rem. (mapscope) |
+| strength labels on claims | statement classes: exact / quasi-static / reading / measured | Sec. Intro (Statement classes); Table (map) |
+| linear-floor exact curved solution | modal solution: two straight loops at the Hessian eigenvalues $\nu_1\ge\nu_2$ | Prop. (curved)(b) |
+| status of the pointwise curved threshold | frozen diagnostic (necessary, not sufficient); exact boundary $\eta\nu_1<2\Teff$ | Rem. (frozenexact) |
+| fixed-$\eta_{\mathrm{HB}}$ sweep result | heavy-ball normalization corollary; optimum $\beta^\star=\max(0,\sqrt{\eta_{\mathrm{HB}}\lambda}-1)$ | Cor. (hb) |
+| two-level Muon register | buffer theorems / update theorems / necessity example | Sec. Filter-First (buffer, update) |
+| operator practical Muon runs | deployed Newton--Schulz operator $\Dcal_{\mathrm{NS}}$ | eq. (deployed) |
+| scalar action of the deployed operator | NS response $h_{\mathrm{NS}}=\psi^{\circ K}$, slope bound $L_h=\sup_{[0,1]}\lvert h_{\mathrm{NS}}'\rvert=\psi_1^K$ | eq. (deployed); Thm. (nsupdate) |
+| annulus hypothesis of the NS theorem | Frobenius floor $\kappa$ | Thm. (nsupdate) |
+| amplitude below which NS transfer is tight | the knee ${\sim}(\kappa+\varepsilon_{\mathrm{NS}})/(2L_h)$ | Rem. (knee) |
 
 ## Banned constructions / legacy names (remove on sight)
 - AI-like editorial (WRITING.md B4): "comprehensive", "thorough", "clearly demonstrates",
   "as expected", "beautifully matches", "matches exactly", figure-reading verbs.
 - Do not coin slash-compounds or decorative adjectives for the named quantities above.
+- "Experiments confirm each/every prediction" and cognates (review_v5 R6): experiments
+  *measure* or *test* predictions; agreement is stated per prediction with its numbers.
+- "the reduction is exact" for any curved-valley statement other than Prop. (curved)(b)'s
+  linear-floor modal solution; the quasi-static part is always labeled as such.
+- Never quote a percentage against a baseline cell containing a diverged seed
+  (divergence-counted criterion, Measurements ¶ Statistics).
 
 ## Register rules (project style)
 - Fix $T_{\mathrm{eff}}=\tfrac{1+\beta}{1-\beta}$ and $|H_\beta(\pi)|=\tfrac{1-\beta}{1+\beta}$ as the
@@ -81,6 +96,11 @@ One phrasing per concept; use it everywhere.
 - Fixed scalar names: closed-loop scalar $\chi=\eta(1-\beta)\lambda$; hill transient $q_{\mathrm{h}}=\eta\lambda-1$;
   $\beta=0$ hill factor $a_0=1-\eta\lambda$; forcing stream $u_t$; hill offset $d_t$; river speed $\vriv$;
   bend amplitude $a_{\mathrm{b}}$; Markov step fraction $\tau$; generic stream dummy $s_t$.
+- New fixed symbols (2026-07-19): linear-floor Hessian eigenvalues $\nu_1\ge\nu_2$; modal weights
+  $b_1,b_2$ (statement-scoped in Prop. (curved)); NS polynomial $\psi$ with coefficients
+  $(\psi_1,\psi_3,\psi_5)=(3.4445,-4.7750,2.0315)$, iteration count $K$ ($=5$ deployed), guard
+  $\varepsilon_{\mathrm{NS}}=10^{-7}$, response $h_{\mathrm{NS}}$, slope bound $L_h$, Frobenius
+  floor $\kappa$. The NS deployed slope is quoted as $\psi_1^K\approx485$ (not 484.88...).
 
 ## Known-dead cross-reference labels (maintained during structural edits)
 - (none pending --- 2026-07-18: `sec:river` was split into `sec:spectrum` + `sec:loop` and

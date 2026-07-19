@@ -134,7 +134,7 @@ for etalam in [0.3, 1.0, 1.8]:
          f"S(pi)={S[-1]:.3f} vs 4/(2-el)^2={4/(2-etalam)**2:.3f}")
 # Var(g) = 2 sigma^2/(2-etalam)  (numerical integral of S/2pi over (-pi,pi])
 for etalam in [0.3, 1.0, 1.8]:
-    var_num = np.trapezoid(S_g(w, etalam), w) / np.pi  # even: 2x integral over [0,pi] /2pi
+    var_num = getattr(np, 'trapezoid', np.trapz)(S_g(w, etalam), w) / np.pi  # even: 2x integral over [0,pi] /2pi
     line(f"  etalam={etalam}: Var(g) integral={var_num:.4f} vs 2/(2-el)={2/(2-etalam):.4f}")
 
 
@@ -152,7 +152,7 @@ for etalam in [0.3, 1.0, 1.8]:
     for b in [0.5, 0.9]:
         # numerical check: integrate |H_b|^2 S_g / 2pi
         H2 = (1 - b) ** 2 / np.abs(1 - b * np.exp(-1j * w)) ** 2
-        num = np.trapezoid(H2 * S_g(w, etalam), w) / np.pi / (2 / (2 - etalam))
+        num = getattr(np, 'trapezoid', np.trapz)(H2 * S_g(w, etalam), w) / np.pi / (2 / (2 - etalam))
         th = rho_filtered(b, etalam)
         line(f"  etalam={etalam} b={b}: filtered/raw power  integral={num:.5f} "
              f"closed-form={th:.5f}  [1/T_eff^2={1/teff(b)**2:.5f}, 1/T_eff={1/teff(b):.5f}]")
