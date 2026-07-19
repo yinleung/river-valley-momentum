@@ -1,0 +1,29 @@
+{
+  "seed": 0,
+  "stage": "confirm",
+  "grid_lrs": [
+    0.05,
+    0.1,
+    0.2,
+    0.4,
+    0.8,
+    3.2
+  ],
+  "betas": [
+    0.0,
+    0.5,
+    0.9,
+    0.95,
+    0.99
+  ],
+  "note": "shapes and orderings, never constants (\u00a73.0.10)",
+  "task": "resnet-cifar",
+  "probe": "preregister",
+  "code_sha": "039694f1",
+  "git_sha": "039694f1",
+  "git_dirty": false,
+  "content_sha": "290f7597",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "platform": "Linux-4.18.0-372.9.1.el8.x86_64-x86_64-with-glibc2.28"
+}

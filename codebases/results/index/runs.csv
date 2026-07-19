@@ -28,6 +28,7 @@ resnet-cifar_g1_scan_cifar10_bn_ema_lr3.2_b0_s0_c1aa62f6,resnet-cifar,g1,resnet-
 resnet-cifar_g1_scan_cifar10_bn_ema_lr6.4_b0_s0_c1aa62f6,resnet-cifar,g1,resnet-cifar,g1,scan_cifar10_bn_ema_lr6.4_b0_s0,c1aa62f6,c1aa62f6,explore,2026-07-19T15:22:29+00:00
 resnet-cifar_preflight_ladder5_T384_5377ff14,resnet-cifar,preflight,resnet-cifar,preflight,ladder5_T384,5377ff14,bb61cb35,explore,2026-07-19T11:44:55+00:00
 resnet-cifar_preflight_ladder5_T384_5dd41c92,resnet-cifar,preflight,resnet-cifar,preflight,ladder5_T384,5dd41c92,aca54008,explore,2026-07-19T11:51:01+00:00
+resnet-cifar_preregister_g1_grid6x5_039694f1,resnet-cifar,preregister,resnet-cifar,preregister,g1_grid6x5,039694f1,039694f1,confirm,2026-07-19T15:25:55+00:00
 resnet-cifar_smoke_T60_1gpu_ccfc7d63,resnet-cifar,smoke,resnet-cifar,smoke,T60_1gpu,ccfc7d63,bb61cb35,explore,2026-07-19T11:46:04+00:00
 resnet-cifar_smoke_T60_1gpu_87f73230,resnet-cifar,smoke,resnet-cifar,smoke,T60_1gpu,87f73230,87f73230,explore,2026-07-19T12:00:36+00:00
 resnet-cifar_smoke_T60_1gpu_e0efac6b,resnet-cifar,smoke,resnet-cifar,smoke,T60_1gpu,e0efac6b,87f73230,explore,2026-07-19T12:04:01+00:00
