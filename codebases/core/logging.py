@@ -59,10 +59,12 @@ def code_sha(extra_files: Iterable[str | Path] = ()) -> str:
 def git_sha() -> tuple[str | None, bool]:
     """(short-8 HEAD sha, dirty flag) of the repo, or (None, True) when unresolvable.
 
-    Dirty = any modified tracked file (untracked files are ignored: data/ and caches are
-    gitignored, and a run's own outputs must not mark the code dirty). Falls back to reading
-    .git/HEAD directly where the git binary is unavailable (some compute nodes) — the dirty
-    flag is then unknowable and reported True, so the cache key stays on the content hash.
+    Dirty = any modified tracked CODE file. Untracked files are ignored (data/ and caches
+    are gitignored), and `codebases/results/` is excluded from the check: log_run itself
+    appends to the tracked runs.csv, so run OUTPUTS must not flip later runs in the same
+    job from the git sha to the content hash (Codex Phase-0 review finding). Falls back to
+    reading .git/HEAD directly where the git binary is unavailable — the dirty flag is
+    then unknowable and reported True, so the cache key stays on the content hash.
     """
     try:
         sha = subprocess.run(
@@ -70,7 +72,8 @@ def git_sha() -> tuple[str | None, bool]:
             capture_output=True, text=True, timeout=10, check=True,
         ).stdout.strip()
         status = subprocess.run(
-            ["git", "status", "--porcelain", "--untracked-files=no"], cwd=_REPO_ROOT,
+            ["git", "status", "--porcelain", "--untracked-files=no", "--",
+             ".", ":(exclude)codebases/results"], cwd=_REPO_ROOT,
             capture_output=True, text=True, timeout=10, check=True,
         ).stdout.strip()
         return sha, bool(status)

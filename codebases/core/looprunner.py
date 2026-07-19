@@ -80,8 +80,11 @@ def run_closed_loop(model: torch.nn.Module, hooks: TaskHooks,
 
     injector: optional ForcedInjector applied AFTER backward, BEFORE the update — window
         streams and sketches record the post-injection gradient (what the optimizer sees).
-    raw_sink(wi, name, kind, array): spills each completed window ("G" | "GLB") so long
-        runs never hold all windows in RAM; None keeps them in the returned dict.
+    raw_sink(wi, name, kind, array, m0): spills each completed window ("G" | "GLB") so
+        long runs never hold all windows in RAM (a 2048-step window over 5 ResNet targets
+        is ~11 GB fp16); m0 = the window-start buffer snapshot for "G" (None for "GLB"),
+        so sinks can reduce (e.g. reconstruct the m-stream for MSR) before discarding.
+        None keeps all windows in the returned dict (smoke/preflight scale only).
     step_callback(t, model): optional (e.g. checkpointing at declared steps).
 
     Returns: losses, gnorm/mnorm, eval_trace (t, val_loss, val_metric), lam_trace,
@@ -156,11 +159,11 @@ def run_closed_loop(model: torch.nn.Module, hooks: TaskHooks,
         if raw_sink is None:
             return
         for tn in tnames:
-            raw_sink(wi, tn, "G", raw[(wi, tn)].array())
+            raw_sink(wi, tn, "G", raw[(wi, tn)].array(), m0.get(f"{wi}:{tn}"))
             raw[(wi, tn)] = None
         for tn in lb_targets:
             if (wi, tn) in lb_raw and lb_raw[(wi, tn)] is not None:
-                raw_sink(wi, tn, "GLB", lb_raw[(wi, tn)].array())
+                raw_sink(wi, tn, "GLB", lb_raw[(wi, tn)].array(), None)
                 lb_raw[(wi, tn)] = None
 
     mids = {s + ln // 2: wi for wi, (s, ln) in enumerate(windows)}
@@ -195,9 +198,20 @@ def run_closed_loop(model: torch.nn.Module, hooks: TaskHooks,
         with hooks.autocast():
             loss = hooks.forward_loss(batch)
         lval = float(loss.detach())
-        loss0 = lval if loss0 is None else loss0
+        # Divergence guard value: under DDP the decision must be identical on every rank
+        # or a lone breaking rank desyncs the collectives and hangs the job (Codex
+        # Phase-0 review finding). MAX-reduce the loss, with non-finite mapped to +inf
+        # (NaN through NCCL MAX is not defined).
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            t = torch.tensor([lval if np.isfinite(lval) else float("inf")],
+                             device=device, dtype=torch.float32)
+            torch.distributed.all_reduce(t, op=torch.distributed.ReduceOp.MAX)
+            guard_val = float(t.item())
+        else:
+            guard_val = lval
+        loss0 = guard_val if loss0 is None else loss0
         losses.append(lval)
-        if not np.isfinite(lval) or lval > 3.0 * max(loss0, 1.0):
+        if not np.isfinite(guard_val) or guard_val > 3.0 * max(loss0, 1.0):
             diverged = True
             losses.pop()
             break

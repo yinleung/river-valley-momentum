@@ -27,7 +27,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-_CODEBASES = pathlib.Path(__file__).resolve().parents[1]
+_CODEBASES = pathlib.Path(__file__).resolve().parents[2]  # scripts/wisteria/ -> codebases/
 sys.path.insert(0, str(_CODEBASES))
 
 from core.device import autocast_ctx, resolve_device, seed_all, setup_determinism  # noqa: E402

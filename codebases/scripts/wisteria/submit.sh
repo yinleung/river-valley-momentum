@@ -57,7 +57,8 @@ tplsrc="${tplsrc//@PAYLOAD@/$payload}"
 printf '%s\n' "$tplsrc" > "$script"
 
 out="$(pjsub "$script" 2>&1)" || { echo "pjsub failed: $out" >&2; exit 1; }
-jobid="$(printf '%s' "$out" | grep -oE '[0-9]+' | head -1)"
+# pjsub prints "[INFO] PJM 0000 pjsub Job <id> submitted." — take the id after "Job"
+jobid="$(printf '%s' "$out" | grep -oE 'Job [0-9]+' | grep -oE '[0-9]+' | head -1)"
 printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$stamp" "$name" "$rscgrp" "$gpus" "$elapse" "$jobid" "$payload" >> "$JOBDIR/submissions.tsv"
 echo "submitted $name -> job $jobid (rscgrp=$rscgrp gpus=$gpus elapse=$elapse)"

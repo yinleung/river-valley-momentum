@@ -17,9 +17,8 @@ Conventions:
     PER-RANK (global = batch_size x world_size; compare runs only at equal world_size).
   - DDP (world > 1) is for training-throughput runs (B4 calibration, G4 confirmation,
     G5 arms): window/LB/HVP instrumentation asserts world == 1 — mechanism probes run on
-    the 20M single-GPU rungs. NOTE for the G4 session: the divergence guard is rank-local;
-    before any 124M run where divergence is a live outcome, synchronize the stop decision
-    across ranks (allreduce the flag) or ranks will desync at the next collective.
+    the 20M single-GPU rungs. The divergence guard is DDP-synchronized inside
+    core.looprunner (MAX-reduced loss), so a lone diverging rank stops all ranks together.
   - LayerNorm only (no BN): probe_mode "train" == "eval"; no BN caveats anywhere.
 """
 from __future__ import annotations

@@ -37,6 +37,8 @@ the gpu count) or `#PJM -L rscgrp=regular-a` + `#PJM -L node=1`; plus `#PJM -g g
   expiry 2027-03-31. Campaign plan ≈775 A100-h ≈ 1,163 tokens (1,510 with +30% contingency) —
   ≈31% of the remaining budget. Fits.
 - At 100% usage queued jobs are held; running jobs finish. `pjstat` shows expected token per job.
+- **Scheduled system stop: 2026-07-31 09:00 JST** (pjstat banner, seen 2026-07-19 — 11.5 days
+  out). Long jobs must complete before it; plan G4/G5 124M full-node runs accordingly.
 
 ### Storage (`show_quota`)
 

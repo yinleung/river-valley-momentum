@@ -15,8 +15,8 @@
 ## Gradient flow / integration
 - `adapter/contract.py` implements the Contract; `end_to_end_train` = `core.looprunner`
   under GPT hooks. Training forward under bf16 autocast (CUDA); probe paths fp32 on the
-  bare module. Divergence guard per looprunner (rank-local — synchronize before any DDP
-  run where divergence is a live outcome; see docstring).
+  bare module. Divergence guard per looprunner, DDP-synchronized (MAX-reduced loss) so
+  ranks stop together.
 - Probed matrices: `mlp.c_fc` at layers {0, mid, last} + `attn.c_attn` at mid.
   m-stream reconstruction from window-start snapshot as in resnet-cifar.
 - Determinism: batch order = f(seed, rank); probe generators at seed offsets lb 1000,

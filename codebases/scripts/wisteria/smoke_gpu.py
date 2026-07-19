@@ -22,7 +22,7 @@ import time
 import numpy as np
 import torch
 
-_CODEBASES = pathlib.Path(__file__).resolve().parents[1]
+_CODEBASES = pathlib.Path(__file__).resolve().parents[2]  # scripts/wisteria/ -> codebases/
 sys.path.insert(0, str(_CODEBASES))
 
 from core.device import (device_info, resolve_device, seed_all,  # noqa: E402
