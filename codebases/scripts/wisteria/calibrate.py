@@ -181,8 +181,11 @@ def calibrate_gpt(cfg_model: dict, tag: str) -> dict:
 
 
 def gpt_loss(model, batch):
+    # Probe-path loss: MATH SDPA — the fused flash/mem-efficient kernels have no
+    # double-backward, which the HVP probes need (same wrap as the task adapter).
     x, y = batch
-    _, loss = model(x, y)
+    with torch.nn.attention.sdpa_kernel(torch.nn.attention.SDPBackend.MATH):
+        _, loss = model(x, y)
     return loss
 
 
@@ -218,7 +221,7 @@ def main() -> None:
     rn = calibrate_resnet()
     for k, v in rn.items():
         print(f"  {k}: {v*1000:.1f} ms")
-    print("== gpt20m (batch 64x1024, bf16 autocast) ==")
+    print(f"== gpt20m (batch {GPT20M['batch_size']}x1024, bf16 autocast) ==")
     g20 = calibrate_gpt(GPT20M, "gpt20m")
     for k, v in g20.items():
         print(f"  {k}: {v if k in ('world', 'tokens_per_s') else round(v*1000, 1)}"

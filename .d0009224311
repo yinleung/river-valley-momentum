@@ -1,18 +1,18 @@
 #!/bin/bash
-#PJM -N calib1
+#PJM -N g1scan
 #PJM -L rscgrp=share
 #PJM -L gpu=1
-#PJM -L elapse=1:30:00
+#PJM -L elapse=4:00:00
 #PJM -g gs26
 #PJM -j
 #PJM -S
-#PJM -o /work/gs26/s26001/river-valley-momentum/codebases/results/joblogs/calib1.20260719_205116.log
+#PJM -o /work/02/gs26/s26001/river-valley-momentum/codebases/results/joblogs/g1scan.20260719_205744.log
 # Template: share-family GPU job (share-debug / share-short / share -> share-1/2/4 by gpu
 # count; token charge = gpu x elapsed h x 1.5). Filled by submit.sh; @KEY@ slots are
 # substituted verbatim, and the submitted copy is archived beside its log for provenance.
 
 set -euo pipefail
-REPO=/work/gs26/s26001/river-valley-momentum
+REPO=/work/02/gs26/s26001/river-valley-momentum
 
 module purge
 module load gcc/8.3.1 python/3.11.7
@@ -37,4 +37,4 @@ nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader ||
 echo "== python $(which python)"
 
 cd "$REPO/codebases"
-python scripts/wisteria/calibrate.py
+python scripts/run_g1_resnet.py --stage scan
