@@ -1,0 +1,43 @@
+{
+  "mu": 0.1,
+  "lam": 10.0,
+  "x_star": 5.0,
+  "a": 2.0,
+  "k": 0.9,
+  "sigma": 2.0,
+  "T": 300,
+  "n_seeds": 12,
+  "tube_radius": 2.0,
+  "gate_rms_tol": 0.1,
+  "gate_guide": {
+    "a": "plain",
+    "b": "bend"
+  },
+  "betas": [
+    0.0,
+    0.5,
+    0.9,
+    0.99,
+    0.999
+  ],
+  "panels": {
+    "a": {
+      "eta": 0.18,
+      "sigma": 2.0
+    },
+    "b": {
+      "eta": 0.25,
+      "sigma": 2.0
+    },
+    "a0": {
+      "eta": 0.18,
+      "sigma": 0.0
+    }
+  },
+  "task": "valley_regimes",
+  "probe": "trajectory",
+  "code_sha": "56464b7d",
+  "python": "3.13.5",
+  "numpy": "2.1.3",
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O"
+}

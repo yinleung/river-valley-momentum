@@ -1,0 +1,23 @@
+# mlp-diagnostic task config (Experiment E6). Mirrors CFG in scripts/run_e6_trajectory.py.
+# First-party task: a tiny 2-layer MLP trained full-batch by GD near the edge of stability.
+
+model:
+  d_in: 24
+  d_hidden: 16
+  d_out: 1
+
+data:
+  n: 512            # full-batch size
+  cond: 120.0       # input condition number (anisotropy)
+  freq: 3.0         # non-realizable target y = sin(freq * <w, x>)
+  label_noise: 0.05
+
+train:
+  eta: 0.3          # learning rate at the edge of stability (sustained omega=pi oscillation)
+  T: 600            # GD steps (trajectory length)
+  burn_in: 50       # steps dropped before the stationary oscillation is analysed
+  seed: 0
+
+analysis:
+  betas: [0.5, 0.9, 0.95, 0.99]
+  hi_frac: 0.6      # high band = {omega >= 0.6 pi}

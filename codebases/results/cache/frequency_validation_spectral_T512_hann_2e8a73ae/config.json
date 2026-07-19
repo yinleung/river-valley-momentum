@@ -1,0 +1,44 @@
+{
+  "T": 512,
+  "omega_slow": 0.05,
+  "omega_fast": 0.85,
+  "amp_slow": 1.0,
+  "amp_fast": 0.6,
+  "sigma": 0.3,
+  "seed": 0,
+  "window": "hann",
+  "eta": 0.18,
+  "straight": {
+    "mu": 0.1,
+    "lam": 10.0,
+    "x_star": 5.0,
+    "x0": -3.0,
+    "y0": 1.0
+  },
+  "curved": {
+    "mu": 0.1,
+    "lam": 10.0,
+    "x_star": 6.0,
+    "a": 2.0,
+    "k": 0.9,
+    "x0": -4.0,
+    "y0": 1.0
+  },
+  "betas": [
+    0.5,
+    0.9,
+    0.95,
+    0.99
+  ],
+  "streams": [
+    "synthetic",
+    "straight",
+    "curved"
+  ],
+  "task": "frequency_validation",
+  "probe": "spectral",
+  "code_sha": "2e8a73ae",
+  "python": "3.13.5",
+  "numpy": "2.1.3",
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O"
+}

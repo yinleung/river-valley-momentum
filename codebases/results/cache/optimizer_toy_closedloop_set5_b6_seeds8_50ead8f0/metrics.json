@@ -1,0 +1,49 @@
+{
+  "gate_a": true,
+  "gate_b": true,
+  "rho_beta": {
+    "S1_straight_el1.8": -0.2,
+    "S2_straight_el0.6": 0.6571428571428571,
+    "S3_curved_k0.9_el1.8": -0.6,
+    "S4_curved_k0.9_el2.5": -0.6,
+    "S5_curved_k1.8_el1.8": -0.6571428571428571
+  },
+  "rho_score": {
+    "S1_straight_el1.8": 0.37142857142857144,
+    "S2_straight_el0.6": -0.3768511731740915,
+    "S3_curved_k0.9_el1.8": 0.7826908981308054,
+    "S4_curved_k0.9_el2.5": 0.9276336570439175,
+    "S5_curved_k1.8_el1.8": 0.753702346348183
+  },
+  "best_beta": {
+    "S1_straight_el1.8": 0.8,
+    "S2_straight_el0.6": 0.5,
+    "S3_curved_k0.9_el1.8": 0.95,
+    "S4_curved_k0.9_el2.5": 0.9,
+    "S5_curved_k1.8_el1.8": 0.95
+  },
+  "schedule_losses": {
+    "fixed 0.9": 0.7528465370959662,
+    "fixed 0.95": 0.6454048038954914,
+    "increasing 0->0.95": 11.482991854811818,
+    "increasing 0.7->0.95": 0.48023658695332505,
+    "decreasing 0.95->0": 26.593917618155693,
+    "step 0->0.9 @30": 88.97535623403581,
+    "step 0.7->0.9 @30": 0.6106267577938569,
+    "adaptive tube 0.7->0.95": 0.8339656648442848,
+    "adaptive flip 0.7->0.95": 0.743407054453576,
+    "adaptive tube 0->0.95": 243.5022093560625
+  },
+  "schedule_triggers": {
+    "fixed 0.9": NaN,
+    "fixed 0.95": NaN,
+    "increasing 0->0.95": NaN,
+    "increasing 0.7->0.95": NaN,
+    "decreasing 0.95->0": NaN,
+    "step 0->0.9 @30": NaN,
+    "step 0.7->0.9 @30": NaN,
+    "adaptive tube 0.7->0.95": 11.0,
+    "adaptive flip 0.7->0.95": 11.0,
+    "adaptive tube 0->0.95": 201.0
+  }
+}

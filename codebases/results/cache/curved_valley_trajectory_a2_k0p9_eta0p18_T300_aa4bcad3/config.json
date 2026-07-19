@@ -1,0 +1,24 @@
+{
+  "mu": 0.1,
+  "lam": 10.0,
+  "x_star": 6.0,
+  "a": 2.0,
+  "k": 0.9,
+  "x0": -4.0,
+  "y0": 1.0,
+  "eta": 0.18,
+  "T": 300,
+  "betas": [
+    0.0,
+    0.5,
+    0.9,
+    0.95,
+    0.99
+  ],
+  "task": "curved_valley",
+  "probe": "trajectory",
+  "code_sha": "aa4bcad3",
+  "python": "3.13.5",
+  "numpy": "2.1.3",
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O"
+}

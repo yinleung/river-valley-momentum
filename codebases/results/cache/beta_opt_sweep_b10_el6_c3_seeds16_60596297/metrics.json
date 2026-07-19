@@ -1,0 +1,22 @@
+{
+  "gate_pass": true,
+  "gate1_boundary": true,
+  "gate2_ratio": true,
+  "gate3_improvement": true,
+  "gate4_regime_scoped": true,
+  "gate5_sigma": true,
+  "gate6_normalization": true,
+  "grid_cells": 174,
+  "grid_cells_bad": 0,
+  "rho_hb": 1.0,
+  "reduction_ref": {
+    "0.6": 0.30161012106300905,
+    "1.2": 0.6036388412504461,
+    "1.6": 0.8155333778900619,
+    "1.8": 0.904782485829896,
+    "2.2": NaN,
+    "2.5": NaN
+  },
+  "reduction_ref_cond": 100.0,
+  "t_over_teff_min": 7.518796992481209
+}

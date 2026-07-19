@@ -1,0 +1,12 @@
+{
+  "gate_pass": true,
+  "gate1_grid": true,
+  "gate2_window": true,
+  "grid_cells": 37,
+  "grid_cells_bad": 1,
+  "window_edges": {
+    "10": 0.7,
+    "100": 0.95,
+    "1000": 0.999
+  }
+}

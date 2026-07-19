@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# reference PDFs are catalogued in references/README.md, not versioned
+references/**/*.pdf
+
+# latex intermediates (main.pdf IS committed: submission-of-record)
+latex/*.aux
+latex/*.log
+latex/*.blg
+latex/*.bbl
+latex/*.out
+latex/*.toc
+latex/*.fls
+latex/*.fdb_latexmk
+latex/*.synctex.gz
+
+# editor/session droppings
+*.swp
+.ipynb_checkpoints/
+
+# embedded upstream clone history, kept local-only (SHA pinned in CODEBASE_INDEX.md)
+codebases/*/upstream/.git-upstream-*

@@ -1,0 +1,41 @@
+{
+  "d_in": 24,
+  "d_hidden": 16,
+  "d_out": 1,
+  "n": 512,
+  "cond": 120.0,
+  "label_noise": 0.05,
+  "freq": 3.0,
+  "T": 600,
+  "seed": 0,
+  "hi_frac": 0.6,
+  "burn_in": 50,
+  "etas": [
+    0.05,
+    0.3
+  ],
+  "betas": [
+    0.0,
+    0.5,
+    0.8,
+    0.9,
+    0.95,
+    0.99
+  ],
+  "muon_betas": [
+    0.5,
+    0.9,
+    0.95
+  ],
+  "muon_etas": [
+    0.05,
+    0.3
+  ],
+  "muon_eta_o": 0.02,
+  "task": "optimizer_mlp",
+  "probe": "closedloop",
+  "code_sha": "50ead8f0",
+  "python": "3.13.5",
+  "numpy": "2.1.3",
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O"
+}

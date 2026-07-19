@@ -1,0 +1,29 @@
+# nanogpt task config (E11 scale transfer)
+# Model: small character-level GPT from upstream nanoGPT on shakespeare_char.
+model:
+  n_layer: 2
+  n_head: 4
+  n_embd: 128
+  block_size: 128
+  vocab_size: 65
+  bias: false
+  dropout: 0.0
+data:
+  dataset: shakespeare_char        # run upstream/data/shakespeare_char/prepare.py once
+  batch_size: 32
+train:
+  steps: 2000
+  eval_iters: 100
+  probe_start: 1200                # gradient-stream probe window (contiguous, for DFT)
+  probe_len: 256
+  device: auto                     # mps if available, else cpu
+sweep:                             # E11 part 1 (SGDM): lr x beta x seed
+  # pilot (300 steps, seed 0): plain SGD stable at 0.2 (HFER 0.98), diverges at 0.4;
+  # beta=0.9/0.95 run at 0.4 and beat every beta=0 loss -> 0.4 is the stabilization row
+  lrs: [0.05, 0.1, 0.2, 0.4]
+  betas: [0.0, 0.5, 0.8, 0.9, 0.95, 0.99]
+  seeds: [0, 1, 2]
+muon:                              # E11 part 2: pre/post/polar on the last block's mlp.c_fc
+  lrs: [0.05, 0.2]                 # background (non-target) plain-SGD lr; both hill-dominated
+  betas: [0.5, 0.9, 0.95]
+  eta_o: 0.02
