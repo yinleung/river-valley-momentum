@@ -32,6 +32,8 @@ codebases/*/upstream/.git-upstream-*
 # Wisteria campaign (plan_v5 §3.1): local-only environment, data, transient run outputs
 .venv-a100/
 .cache/
+.d[0-9]*
+*.stats
 codebases/*/data/
 codebases/results/joblogs/
 codebases/results/raw/

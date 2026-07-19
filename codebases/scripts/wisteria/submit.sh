@@ -56,7 +56,8 @@ tplsrc="${tplsrc//@REPO@/$REPO}"
 tplsrc="${tplsrc//@PAYLOAD@/$payload}"
 printf '%s\n' "$tplsrc" > "$script"
 
-out="$(pjsub "$script" 2>&1)" || { echo "pjsub failed: $out" >&2; exit 1; }
+# run pjsub from the joblogs dir so the -S stats files (.dNNN) land there, not in git
+out="$(cd "$JOBDIR" && pjsub "$script" 2>&1)" || { echo "pjsub failed: $out" >&2; exit 1; }
 # pjsub prints "[INFO] PJM 0000 pjsub Job <id> submitted." — take the id after "Job"
 jobid="$(printf '%s' "$out" | grep -oE 'Job [0-9]+' | grep -oE '[0-9]+' | head -1)"
 printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
