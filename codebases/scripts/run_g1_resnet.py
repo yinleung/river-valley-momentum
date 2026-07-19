@@ -122,14 +122,31 @@ def sketch_reductions(out: dict) -> dict:
 
 
 def run_cell(y: dict, stage: str, lr: float, beta: float, seed: int, kind: str = "ema",
-             norm: str = "bn", dataset: str = "cifar10", keep_raw: bool = False) -> str:
+             norm: str = "bn", dataset: str = "cifar10", keep_raw: bool = False,
+             over: dict | None = None, resume: bool = True) -> str:
     """One training run + in-sink reductions + cache record; returns run_id.
 
     Raw windows are reduced AS THEY COMPLETE in the raw_sink (holding all windows in RAM
     would be ~33 GB fp16 per run); the fp16 stream itself is persisted only per the
     module-docstring raw policy (seed-0 EoS-onset window, two mid targets).
+    resume=True skips a cell whose key already has a cached g1 record (crash/elapse
+    recovery for multi-run jobs); `over` = stage-specific config overrides.
     """
+    key = f"{stage}_{dataset}_{norm}_{kind}_lr{lr:g}_b{beta:g}_s{seed}"
+    if resume:
+        import csv
+        idx = _CODEBASES / "results" / "index" / "runs.csv"
+        if idx.exists():
+            with open(idx) as f:
+                hit = [r["run_id"] for r in csv.DictReader(f)
+                       if r["task"] == "resnet-cifar" and r["probe"] == "g1"
+                       and r["key"] == key]
+            if hit:
+                print(f"  [resume] {key} cached as {hit[-1]} — skipping")
+                return hit[-1]
     cfg = base_config(y, lr=lr, seed=seed, norm=norm, dataset=dataset)
+    if over:
+        cfg.update(over)
     cfg["stage"] = "explore" if stage == "scan" else "confirm"
     cfg["gates"] = GATES
     cfg["protocol"] = "P-thy" if kind == "ema" else "P-prac"
@@ -140,7 +157,6 @@ def run_cell(y: dict, stage: str, lr: float, beta: float, seed: int, kind: str =
     data = contract.data_loader(cfg)
     targets = contract.target_modules(model, cfg)
 
-    key = f"{stage}_{dataset}_{norm}_{kind}_lr{lr:g}_b{beta:g}_s{seed}"
     coef_g = (1.0 - beta) if kind == "ema" else 1.0
     red: dict[str, np.ndarray | float] = {}
     raw_paths: list[str] = []
@@ -178,7 +194,8 @@ def run_cell(y: dict, stage: str, lr: float, beta: float, seed: int, kind: str =
                                           * (1 - beta) * lam_tail) if np.isfinite(lam_tail)
         else float("nan"),
         sharpness_threshold=thr, secs=round(secs, 1),
-        hfer_w1_mid=red.get("w1_layer3.0.conv1_hfer0.6", float("nan")),
+        hfer_w1_mid=red.get("w1_layer3.0.conv1_hfer0.6",
+                            red.get("w0_layer3.0.conv1_hfer0.6", float("nan"))),
         raw_paths=";".join(raw_paths),
     )
     arrays = dict(
@@ -201,10 +218,15 @@ def run_cell(y: dict, stage: str, lr: float, beta: float, seed: int, kind: str =
 
 # --- stages ------------------------------------------------------------------
 def stage_scan(y: dict) -> None:
+    """Coarse beta = 0 scan, slimmed to its classification purpose (divergence, chi,
+    one-window HFER): one mid window, no sketches, no LB, lam cadence 400. The full
+    3-window instrumentation is the GRID's job — at ~51 min/run (first scan attempt) the
+    full config would blow both the job elapse and the family budget."""
     lrs = y["g1"]["scan_lrs"]
+    slim = dict(windows=[[4000, 2048]], sketch_k=0, lb_batch=0, lam_every=400)
     rows = []
     for lr in lrs:
-        rid = run_cell(y, "scan", lr, 0.0, seed=0)
+        rid = run_cell(y, "scan", lr, 0.0, seed=0, over=slim)
         cache = _CODEBASES / "results" / "cache" / rid / "metrics.json"
         m = json.loads(cache.read_text())
         rows.append((lr, m))

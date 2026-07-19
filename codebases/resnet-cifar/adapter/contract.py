@@ -176,12 +176,18 @@ def probe_batches(config: dict, seed_offset: int, total: int, chunk: int) -> lis
 
 # --- probed matrices / groups ----------------------------------------------
 def target_modules(model: torch.nn.Module, config: dict) -> dict[str, torch.Tensor]:
-    """The designated probed weight matrices across depth (raw windows live here)."""
+    """The designated probed weight matrices across depth (raw windows live here).
+
+    layer4.1.conv2 (2.36M params) was dropped from the RAW-window set after the first
+    scan run: it alone is ~7x the other four targets combined in capture + reduction
+    cost, and its temporal band structure stays measured through the layer4 JL-sketch
+    group spectra. Decided BEFORE the G1 grid predeclaration; raw depth coverage is
+    conv1 (stem) / layer2 / layer3 / linear + all-block sketches.
+    """
     return {
         "conv1": model.conv1.weight,
         "layer2.0.conv1": model.layer2[0].conv1.weight,
         "layer3.0.conv1": model.layer3[0].conv1.weight,
-        "layer4.1.conv2": model.layer4[1].conv2.weight,
         "linear": model.linear.weight,
     }
 
