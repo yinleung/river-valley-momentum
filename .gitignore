@@ -28,3 +28,11 @@ latex/*.synctex.gz
 
 # embedded upstream clone history, kept local-only (SHA pinned in CODEBASE_INDEX.md)
 codebases/*/upstream/.git-upstream-*
+
+# Wisteria campaign (plan_v5 §3.1): local-only environment, data, transient run outputs
+.venv-a100/
+.cache/
+codebases/*/data/
+codebases/results/joblogs/
+codebases/results/raw/
+codebases/results/ckpt/

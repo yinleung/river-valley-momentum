@@ -1,0 +1,45 @@
+# resnet-cifar task config (plan_v5 G1/G2/G3)
+# Model: upstream kuangliu/pytorch-cifar ResNet-18 (BN; "gn" swaps to GroupNorm control).
+model:
+  norm: bn                     # bn | gn (G1 BN-free control arm)
+data:
+  dataset: cifar10             # cifar10 | cifar100 (G1 thinned complete sweep)
+  batch_size: 128
+  augment: false               # mechanism runs unaugmented (G1 card); P-prac may enable
+train:
+  steps: 10000
+  eval_every: 1000
+  device: auto
+  # diagnostic windows (start, len): early / EoS-onset / late; len >= 2048 so the
+  # beta = 0.99 T_eff = 199 satisfies window >= 10*T_eff (protocol §3.0.3)
+  windows: [[1000, 2048], [4000, 2048], [7448, 2048]]
+  sketch_k: 128                # JL sketch dims within windows
+  lam_every: 200               # sharpness tracker cadence (fixed 512-example subset)
+  lam_batch: 512
+  lam_chunk: 512
+  lb_batch: 2048               # large-batch probe for alignment(m, gbar_LB) in windows
+  lb_chunk: 512
+  lb_every: 256                # G1 cadence within windows (G2 probe runs use 1)
+g1:
+  scan_lrs: [0.0125, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2]   # coarse beta=0 scan
+  betas: [0.0, 0.5, 0.9, 0.95, 0.99]
+  seeds: [0, 1, 2]
+  headline_seeds: [0, 1, 2, 3, 4]
+  # grid_lrs: chosen from the scan (subcritical / intermediate / near-edge / beta0-unstable),
+  # written here by the scan step BEFORE the grid launches (predeclaration)
+g2:
+  lb_every: 1
+  lb_batch: 4096
+  lb_chunk: 512
+  eig_at_mid: true
+  eig_k: 16
+  eig_m: 48
+  eig_batch: 2048
+  eig_chunk: 512
+  lb_targets: ["layer2.0.conv1", "layer3.0.conv1", "linear"]  # decomposition matrices
+g3:
+  omegas: [0.02, "theta_hat_0.9", 1.885, 3.14159265]   # passband / resonance / 0.6pi / pi
+  betas: [0.0, 0.5, 0.9, 0.95, 0.99]
+  steps: 500
+  amp_frac: 0.2                # A = amp_frac * rms aligned gradient (10-30% per card)
+  seeds: [0, 1, 2]

@@ -1,0 +1,33 @@
+# nanogpt-gpu task config (plan_v5 G4/G5/G6)
+# GPT-2-BPE decoder-only models from the vendored nanoGPT upstream on FineWeb 10BT shards.
+data:
+  data_dir: /work/gs26/s26001/modded-nanogpt/data/fineweb10B   # llm.c shards (see notes)
+  block_size: 1024
+  vocab_size: 50304            # GPT-2 50257 padded (nanoGPT convention)
+models:
+  gpt20m:                      # G4 diagnostic rung (~6 layers, d=384 per plan G4)
+    n_layer: 6
+    n_head: 6
+    n_embd: 384
+    batch_size: 64             # per-rank sequences (65,536 tokens/step at world=1)
+  gpt124m:                     # GPT-2 small confirmation rung
+    n_layer: 12
+    n_head: 12
+    n_embd: 768
+    batch_size: 24             # per-rank; x8 ranks = 196,608 tokens/step full-node
+train:
+  device: auto
+  eval_iters: 20
+  eval_batch: 32
+preflight:                     # Phase-0 gate defaults (scripts/preflight_stream.py)
+  model: gpt20m
+  steps: 384
+  windows: [[96, 256]]
+  lrs: [0.02, 0.05, 0.1, 0.2, 0.5]
+g4:                            # diagnostic sweep skeleton (grids finalized at G4 launch)
+  betas: [0.0, 0.5, 0.9, 0.95, 0.99]
+  seeds: [0, 1, 2]
+  steps: 6000
+  windows: [[600, 2048], [3500, 2048]]
+  sketch_k: 128
+  lam_every: 250
