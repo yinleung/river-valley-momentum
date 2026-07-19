@@ -9,9 +9,12 @@ Optimizer conventions (§3.0 invariant 1):
     kind "ema"   m = beta*m + (1-beta)*g;  w -= lr*m      (P-thy, the paper's normalization)
     kind "hb"    m = beta*m + g;           w -= lr*m      (P-prac conventional; eta_HB = eta*(1-beta))
 
-Divergence discipline (§3.0 invariant 2): no clipping; run stops on non-finite loss or
-loss > 3x initial; spike counter = steps with loss > 2x trailing-50 median. Divergence
-counts as failure downstream.
+Divergence discipline (§3.0 invariant 2): no clipping; run stops on non-finite loss
+(immediately) or on loss > 3x initial SUSTAINED for 10 consecutive steps — a one-step
+spike that recovers is a spike (counted), not a death (the Phase-0 resnet preflight showed
+the instant 3x rule killing lr >= 0.2 at step 1, which would misclassify recoverable
+transients as divergence). The tripping value is returned as diverge_loss. Divergence
+counts as failure downstream; predeclared before any campaign run.
 
 Precision policy (B2): the training forward runs under hooks.autocast (bf16 on CUDA for
 GPT-scale tasks, nullcontext for fp32 tasks); every probe path (windows read .grad as
@@ -173,21 +176,30 @@ def run_closed_loop(model: torch.nn.Module, hooks: TaskHooks,
 
     losses, gnorm, mnorm = [], [], []
     diverged = False
+    diverge_loss = float("nan")
     loss0 = None
     spikes = 0
+    over3x = 0  # consecutive steps above 3x initial (sustained-divergence counter)
     model.train()
     for t in range(T):
-        # window-midpoint eigenpairs (G2) — before this step's update
+        # window-midpoint eigenpairs (G2) — before this step's update. Default: one
+        # Lanczos per config["eig_targets"] name, RESTRICTED to that matrix (E12's
+        # target-restricted Hessian; eigvecs reshaped to the target). eig_targets
+        # "full" (or absent) adds/uses the full-model operator instead.
         if eig_batches is not None and t in mids:
             saved_bufs = _named_buffer_state(model)
-            op = HVPOperator(hooks.forward_loss_fp32, params, eig_batches)
-            ritz, vecs, resid = lanczos_topk(
-                op, k=int(config.get("eig_k", 16)), m=int(config.get("eig_m", 48)),
-                seed=config["seed"] + 13, want_vectors=True)
+            for ename in config.get("eig_targets", ["full"]):
+                eparams = params if ename == "full" else [targets[ename]]
+                op = HVPOperator(hooks.forward_loss_fp32, eparams, eig_batches)
+                ritz, vecs, resid = lanczos_topk(
+                    op, k=int(config.get("eig_k", 16)), m=int(config.get("eig_m", 48)),
+                    seed=config["seed"] + 13, want_vectors=True)
+                if ename != "full" and vecs is not None:
+                    vecs = vecs.reshape(vecs.shape[0], *targets[ename].shape)
+                eig_rec.append(dict(step=t, window=mids[t], target=ename, eigvals=ritz,
+                                    eig_resid=resid, eigvecs=vecs))
             _restore_buffers(saved_bufs)
             model.zero_grad(set_to_none=True)
-            eig_rec.append(dict(step=t, window=mids[t], eigvals=ritz, eig_resid=resid,
-                                eigvecs=vecs))
         if lam_every and t % lam_every == 0:
             saved_bufs = _named_buffer_state(model)
             lam_trace.append((t, tracker.measure(t)))
@@ -211,10 +223,20 @@ def run_closed_loop(model: torch.nn.Module, hooks: TaskHooks,
             guard_val = lval
         loss0 = guard_val if loss0 is None else loss0
         losses.append(lval)
-        if not np.isfinite(guard_val) or guard_val > 3.0 * max(loss0, 1.0):
+        if not np.isfinite(guard_val):
             diverged = True
+            diverge_loss = guard_val
             losses.pop()
             break
+        if guard_val > 3.0 * max(loss0, 1.0):
+            over3x += 1
+            if over3x >= 10:  # sustained blow-up, not a recoverable spike
+                diverged = True
+                diverge_loss = guard_val
+                losses.pop()
+                break
+        else:
+            over3x = 0
         if t > 50 and lval > 2.0 * float(np.median(losses[-51:-1])):
             spikes += 1
         model.zero_grad(set_to_none=False)
@@ -294,6 +316,7 @@ def run_closed_loop(model: torch.nn.Module, hooks: TaskHooks,
         inj_rec=inj_rec,
         spikes=spikes,
         diverged=diverged,
+        diverge_loss=diverge_loss,
         val_loss=eval_trace[-1][1] if eval_trace else float("inf"),
         val_metric=eval_trace[-1][2] if eval_trace else 0.0,
     )

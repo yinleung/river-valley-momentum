@@ -1,18 +1,18 @@
 #!/bin/bash
-#PJM -N @NAME@
-#PJM -L rscgrp=@RSCGRP@
-#PJM -L gpu=@GPUS@
-#PJM -L elapse=@ELAPSE@
+#PJM -N calib1
+#PJM -L rscgrp=share
+#PJM -L gpu=1
+#PJM -L elapse=1:30:00
 #PJM -g gs26
 #PJM -j
 #PJM -S
-#PJM -o @LOG@
+#PJM -o /work/gs26/s26001/river-valley-momentum/codebases/results/joblogs/calib1.20260719_204251.log
 # Template: share-family GPU job (share-debug / share-short / share -> share-1/2/4 by gpu
 # count; token charge = gpu x elapsed h x 1.5). Filled by submit.sh; @KEY@ slots are
 # substituted verbatim, and the submitted copy is archived beside its log for provenance.
 
 set -euo pipefail
-REPO=@REPO@
+REPO=/work/gs26/s26001/river-valley-momentum
 
 module purge
 module load gcc/8.3.1 python/3.11.7
@@ -30,11 +30,10 @@ mkdir -p "$TORCH_HOME" "$TRITON_CACHE_DIR" "$HF_HOME" "$MPLCONFIGDIR"
 # Determinism policy (plan §3.1 B2): cuBLAS reproducible workspace; per-run seeds and
 # torch.use_deterministic_algorithms are set in core/device.py from the run config.
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 echo "== node $(hostname) | job ${PJM_JOBID:-?} | $(date -u +%FT%TZ)"
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader || true
 echo "== python $(which python)"
 
 cd "$REPO/codebases"
-@PAYLOAD@
+python scripts/wisteria/calibrate.py

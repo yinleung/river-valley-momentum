@@ -9,7 +9,9 @@ models:
     n_layer: 6
     n_head: 6
     n_embd: 384
-    batch_size: 64             # per-rank sequences (65,536 tokens/step at world=1)
+    batch_size: 32             # per-rank sequences (32,768 tokens/step at world=1);
+                               # 64 OOMs a 40GB A100: nanoGPT's fp32 loss logits are
+                               # B x 1024 x 50304 (13 GiB at B=64)
   gpt124m:                     # GPT-2 small confirmation rung
     n_layer: 12
     n_head: 12

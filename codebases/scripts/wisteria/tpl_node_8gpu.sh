@@ -27,6 +27,7 @@ export MPLCONFIGDIR="$REPO/.cache/mpl"
 mkdir -p "$TORCH_HOME" "$TRITON_CACHE_DIR" "$HF_HOME" "$MPLCONFIGDIR"
 
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # Single-node DDP over NVSwitch; socket family pinned per Leon's working scripts.
 export NCCL_SOCKET_FAMILY=AF_INET
 export GLOO_SOCKET_FAMILY=AF_INET

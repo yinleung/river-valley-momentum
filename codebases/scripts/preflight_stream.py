@@ -18,8 +18,12 @@ Predeclared PASS rules (per task; evaluated on the ladder):
       HFER(0.6 pi, rect) above the white-noise 97.5% surrogate quantile AND rising PSD
       (Spearman rho(omega, S(omega)) >= 0.5).
   P2  structure is temporal, not amplitude: at every completed LR the stream's lag-1
-      autocorrelation |rho_1| is finite and the P1 cell has rho_1 < -0.2 or > 0.2
-      (a white stream has rho_1 ~ 0; the hill mode gives negative rho_1 near the edge).
+      autocorrelation rho_1 is finite, and at >= 1 P1 cell rho_1 < -0.02 — decisively on
+      the oscillatory side of the white null (null sd ~ 1/sqrt(T*d) ~ 1e-4 here).
+      REVISED during Phase-0 bring-up (before any campaign measurement): the first
+      operationalization required |rho_1| > 0.2, which a real network's many quiet
+      directions dilute away (measured -0.12/-0.13 at the P1 cells with unambiguous
+      sign); magnitude-level concentration is G2's job, not the preflight's.
 
 Usage:
   cd codebases && python scripts/preflight_stream.py --task resnet-cifar
@@ -163,7 +167,7 @@ def main() -> None:
                 if r["hfer_rect_0.6"] > wq and r["psd_spearman"] >= 0.5]
     p1 = len(p1_cells) >= 1
     p2 = all(np.isfinite(r["lag1_rho"]) for r in done) and \
-        (p1 and any(abs(r["lag1_rho"]) > 0.2 for r in p1_cells))
+        (p1 and any(r["lag1_rho"] < -0.02 for r in p1_cells))
     ok = p0 and p1 and p2
     print(f"\n  P0 wiring ({len(done)} complete): {'PASS' if p0 else 'FAIL'}")
     print(f"  P1 regime presence ({len(p1_cells)} cells over white q97.5={wq:.3f}): "

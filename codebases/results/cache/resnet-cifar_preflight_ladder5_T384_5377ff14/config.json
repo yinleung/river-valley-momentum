@@ -1,0 +1,41 @@
+{
+  "seed": 0,
+  "dataset": "cifar10",
+  "batch_size": 128,
+  "norm": "bn",
+  "augment": false,
+  "device": "auto",
+  "steps": 384,
+  "windows": [
+    [
+      128,
+      256
+    ]
+  ],
+  "raw_dtype": "float32",
+  "lrs": [
+    0.0125,
+    0.05,
+    0.2,
+    0.8,
+    1.6
+  ],
+  "stage": "explore",
+  "determinism": {
+    "deterministic_algorithms": true,
+    "deterministic_strict": false,
+    "cudnn_benchmark": false,
+    "tf32": false,
+    "cublas_workspace_config": ":4096:8"
+  },
+  "primary_target": "layer2.0.conv1",
+  "task": "resnet-cifar",
+  "probe": "preflight",
+  "code_sha": "5377ff14",
+  "git_sha": "bb61cb35",
+  "git_dirty": true,
+  "content_sha": "5377ff14",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "platform": "Linux-4.18.0-372.9.1.el8.x86_64-x86_64-with-glibc2.28"
+}
