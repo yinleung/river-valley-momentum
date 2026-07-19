@@ -47,7 +47,7 @@ gpt = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(gpt)
 
 GPT20M = dict(seed=0, n_layer=6, n_head=6, n_embd=384, block_size=1024, vocab_size=50304,
-              batch_size=64, device="auto")
+              batch_size=32, device="auto")  # 64 OOMs: fp32 loss logits B x 1024 x 50304
 GPT124M = dict(seed=0, n_layer=12, n_head=12, n_embd=768, block_size=1024,
                vocab_size=50304, batch_size=24, device="auto")
 

@@ -308,8 +308,9 @@ def stage_report(y: dict) -> None:
     print(f"  gate 3 low-freq outside: {sum(g3v)}/{n} {'PASS' if g3 else 'FAIL'}")
     print("  gate 4 (benefit coupling) needs the G1 benefit table: run "
           "run_g1_resnet.py --stage report and correlate (documented in summary.md).")
-    print(f"\n  KILL-SWITCH: {'clear so far' if (g1 and g2) else 'TRIPPED — stop, '
-          'write the negative-result summary, report to Leon'}")
+    verdict = ("clear so far" if (g1 and g2) else
+               "TRIPPED — stop, write the negative-result summary, report to Leon")
+    print(f"\n  KILL-SWITCH: {verdict}")
 
 
 def _beta_of(key: str) -> float:

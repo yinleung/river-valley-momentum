@@ -1,0 +1,18 @@
+{
+  "loss0": 10.870269775390625,
+  "loss_end": 8.786684036254883,
+  "val_loss": 8.94364881515503,
+  "diverged": false,
+  "spikes": 0,
+  "lam_last": 29.685274124145508,
+  "chi_last": 0.14842637062072753,
+  "n_raw_windows": 4,
+  "n_lb_windows": 4,
+  "n_sketch_steps": 16,
+  "n_lb_align": 2,
+  "n_eig": 1,
+  "eig_top": 22.34263567759952,
+  "instrumentation_ok": true,
+  "secs": 58.2,
+  "gate_pass": true
+}
