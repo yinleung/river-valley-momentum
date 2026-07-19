@@ -298,17 +298,23 @@ def stage_grid(y: dict, rows: list[float] | None) -> None:
 
 
 def stage_pprac(y: dict, rows: list[float] | None) -> None:
+    """P-prac companion: conventional-HB, per-beta 3-point LR tune around the
+    eta_HB = eta*(1-beta) conversion, at the two practitioner-relevant regimes
+    (grid_lrs[-2:]). Slim instrumentation: P-prac is a tuned performance comparison
+    (§3.0.8/9) — its predeclared readouts are loss/acc/divergence, not spectra."""
+    slim = dict(windows=[[4000, 2048]], sketch_k=0, lb_batch=0, lam_every=400)
     lrs = y["g1"].get("grid_lrs") or []
-    two = lrs[-2:]  # near-edge + unstable rows (practitioner-relevant regimes)
+    two = lrs[-2:]
     betas = [b for b in y["g1"]["betas"] if b > 0 and (rows is None or b in rows)]
     for beta, lr0, seed in itertools.product(betas, two, y["g1"]["seeds"]):
         for f in (0.5, 1.0, 2.0):  # 3-point tune around the eta_HB conversion
-            run_cell(y, "pprac", lr0 * (1 - beta) * f, beta, seed, kind="hb")
+            run_cell(y, "pprac", lr0 * (1 - beta) * f, beta, seed, kind="hb", over=slim)
 
 
-def stage_c100(y: dict) -> None:
+def stage_c100(y: dict, rows: list[float] | None = None) -> None:
     lrs = (y["g1"].get("grid_lrs") or [])[1:4]  # 3 LRs spanning the mid regimes
-    for beta, lr, seed in itertools.product(y["g1"]["betas"], lrs, y["g1"]["seeds"]):
+    betas = [b for b in y["g1"]["betas"] if rows is None or b in rows]
+    for beta, lr, seed in itertools.product(betas, lrs, y["g1"]["seeds"]):
         run_cell(y, "c100", lr, beta, seed, dataset="cifar100")
 
 
@@ -400,7 +406,7 @@ def main() -> None:
     rows = [float(x) for x in args.rows.split(",")] if args.rows else None
     dict(scan=stage_scan, preregister=stage_preregister,
          grid=lambda y: stage_grid(y, rows), pprac=lambda y: stage_pprac(y, rows),
-         c100=stage_c100, gn=stage_gn, topup=stage_topup,
+         c100=lambda y: stage_c100(y, rows), gn=stage_gn, topup=stage_topup,
          report=stage_report)[args.stage](y)
 
 
