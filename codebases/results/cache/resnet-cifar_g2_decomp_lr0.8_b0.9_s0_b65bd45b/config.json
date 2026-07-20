@@ -1,0 +1,66 @@
+{
+  "seed": 0,
+  "device": "auto",
+  "dataset": "cifar10",
+  "batch_size": 128,
+  "augment": false,
+  "norm": "bn",
+  "lr": 0.8,
+  "steps": 10000,
+  "eval_every": 1000,
+  "windows": [
+    [
+      1000,
+      2048
+    ],
+    [
+      4000,
+      2048
+    ],
+    [
+      7448,
+      2048
+    ]
+  ],
+  "sketch_k": 0,
+  "lam_every": 200,
+  "lam_batch": 512,
+  "lam_chunk": 512,
+  "lb_batch": 4096,
+  "lb_chunk": 512,
+  "lb_every": 1,
+  "lb_targets": [
+    "layer2.0.conv1",
+    "layer3.0.conv1",
+    "linear"
+  ],
+  "eig_at_mid": true,
+  "eig_k": 16,
+  "eig_m": 48,
+  "eig_batch": 2048,
+  "eig_chunk": 512,
+  "eig_targets": [
+    "layer2.0.conv1",
+    "layer3.0.conv1",
+    "linear"
+  ],
+  "stage": "confirm",
+  "gates": "1: share_lb>=0.5 (w1); 2: HFER_in>=HFER_out+0.10 and share_high_in>=0.25; 3: low-band share out-of-subspace >= in + 0.10; 4: Spearman(benefit, state share)>0 across regimes",
+  "protocol": "P-thy",
+  "determinism": {
+    "deterministic_algorithms": true,
+    "deterministic_strict": false,
+    "cudnn_benchmark": false,
+    "tf32": false,
+    "cublas_workspace_config": ":4096:8"
+  },
+  "task": "resnet-cifar",
+  "probe": "g2",
+  "code_sha": "b65bd45b",
+  "git_sha": "b65bd45b",
+  "git_dirty": false,
+  "content_sha": "b2753915",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "platform": "Linux-4.18.0-372.9.1.el8.x86_64-x86_64-with-glibc2.28"
+}

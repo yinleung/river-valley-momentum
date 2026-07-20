@@ -192,8 +192,21 @@ so it is not being run unilaterally — say the word and it is ~1 GPU-h.
   (12% MFU today; likely ≥2× step-rate, but adds a compile-vs-eager consistency check to
   the protocol). G5 (175 h, 124M-heavy) will be re-projected at its session with the same
   lever set. No G4/G5 job launches until Leon picks.
-- G1 STARTED: coarse scan (job 9224311, 10 LRs × 10k steps) running; grid follows the
-  scan classification + preregister + commit, per the predeclaration protocol.
-- Next session entry point: read this file §6, then `pjstat`; if the scan finished,
-  review its classification table in `results/joblogs/g1scan.*.log`, commit grid_lrs,
-  run `--stage preregister`, commit, then launch grid rows (submit.sh, 5 jobs `--rows`).
+- **G1 COMPLETE (2026-07-20).** Scan (10 LRs) → grid (6 LR × 5 β × 3 seed = 90, PASS,
+  zero divergence) → P-prac (60 tuned HB cells) → CIFAR-100 thinned (45) → GroupNorm
+  control (12) → 5-seed top-ups. Two findings in §4b: BN never diverges (gate b moves to
+  GN); GN sign-flips gate b as an initialization transient (scoped). All cached + pushed.
+- **G2 COMPLETE (kill-switch) — TRIPPED (2026-07-21).** 12 decomposition cells. The four
+  support conditions FAIL as operationalized: high-frequency gradient band is majority
+  sampling noise on ResNet-CIFAR (share_lb ≤ 0.28 at mid LR, reaches 0.58 only beyond the
+  edge; E12 nanoGPT was 0.83–0.93). Mechanism is PRESENT but noise-subdominant (grows
+  toward the edge, curvature-concentrated). Full evidence + recommendation:
+  **`discussions/g2_negative_result.md`**.
+- **CAMPAIGN PAUSED. G3/G4 NOT STARTED — Leon's decision required** (mission's explicit
+  kill-switch instruction). Three options in the negative-result doc; my recommendation is
+  the larger-batch decomposition check + G3-by-injection (both cheap, both distinguish
+  "mechanism weak" from "mechanism absent"). Do not launch G3/G4 until Leon rules.
+- Next session entry point: read this file §6 + `discussions/g2_negative_result.md`, then
+  await/execute Leon's G2 decision. If continuing: G3 driver is ready
+  (`scripts/run_g3_forced.py --stage make_ckpts`), the larger-batch probe is a
+  config-only change to `g2.lb_batch`/`batch_size`.

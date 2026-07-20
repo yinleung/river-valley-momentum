@@ -241,9 +241,13 @@ resnet-cifar_g1_scan_cifar10_bn_ema_lr0.8_b0_s0_c1aa62f6,resnet-cifar,g1,resnet-
 resnet-cifar_g1_scan_cifar10_bn_ema_lr1.6_b0_s0_c1aa62f6,resnet-cifar,g1,resnet-cifar,g1,scan_cifar10_bn_ema_lr1.6_b0_s0,c1aa62f6,c1aa62f6,explore,2026-07-19T14:54:30+00:00
 resnet-cifar_g1_scan_cifar10_bn_ema_lr3.2_b0_s0_c1aa62f6,resnet-cifar,g1,resnet-cifar,g1,scan_cifar10_bn_ema_lr3.2_b0_s0,c1aa62f6,c1aa62f6,explore,2026-07-19T15:08:30+00:00
 resnet-cifar_g1_scan_cifar10_bn_ema_lr6.4_b0_s0_c1aa62f6,resnet-cifar,g1,resnet-cifar,g1,scan_cifar10_bn_ema_lr6.4_b0_s0,c1aa62f6,c1aa62f6,explore,2026-07-19T15:22:29+00:00
+resnet-cifar_g2_decomp_lr0.05_b0.9_s0_b65bd45b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr0.05_b0.9_s0,b65bd45b,b65bd45b,confirm,2026-07-20T14:53:05+00:00
 resnet-cifar_g2_decomp_lr0.05_b0_s0_cb93917b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr0.05_b0_s0,cb93917b,cb93917b,confirm,2026-07-20T10:42:21+00:00
+resnet-cifar_g2_decomp_lr0.2_b0.9_s0_b65bd45b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr0.2_b0.9_s0,b65bd45b,b65bd45b,confirm,2026-07-20T14:44:14+00:00
 resnet-cifar_g2_decomp_lr0.2_b0_s0_cb93917b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr0.2_b0_s0,cb93917b,cb93917b,confirm,2026-07-20T10:37:09+00:00
+resnet-cifar_g2_decomp_lr0.8_b0.9_s0_b65bd45b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr0.8_b0.9_s0,b65bd45b,b65bd45b,confirm,2026-07-20T14:45:27+00:00
 resnet-cifar_g2_decomp_lr0.8_b0_s0_cb93917b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr0.8_b0_s0,cb93917b,cb93917b,confirm,2026-07-20T10:39:43+00:00
+resnet-cifar_g2_decomp_lr3.2_b0.9_s0_b65bd45b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr3.2_b0.9_s0,b65bd45b,b65bd45b,confirm,2026-07-20T14:53:36+00:00
 resnet-cifar_g2_decomp_lr3.2_b0_s0_cb93917b,resnet-cifar,g2,resnet-cifar,g2,decomp_lr3.2_b0_s0,cb93917b,cb93917b,confirm,2026-07-20T10:43:34+00:00
 resnet-cifar_preflight_ladder5_T384_5377ff14,resnet-cifar,preflight,resnet-cifar,preflight,ladder5_T384,5377ff14,bb61cb35,explore,2026-07-19T11:44:55+00:00
 resnet-cifar_preflight_ladder5_T384_5dd41c92,resnet-cifar,preflight,resnet-cifar,preflight,ladder5_T384,5dd41c92,aca54008,explore,2026-07-19T11:51:01+00:00
