@@ -1,0 +1,43 @@
+{
+  "seed": 2,
+  "device": "auto",
+  "dataset": "cifar10",
+  "batch_size": 128,
+  "augment": false,
+  "norm": "bn",
+  "steps": 10000,
+  "eval_every": 1000,
+  "windows": [
+    [
+      4000,
+      2048
+    ]
+  ],
+  "sketch_k": 0,
+  "lam_every": 400,
+  "lam_batch": 512,
+  "lam_chunk": 512,
+  "lb_batch": 0,
+  "lb_chunk": 512,
+  "lb_every": 256,
+  "lr": 1.6,
+  "stage": "confirm",
+  "gates": "a: benefit increases with eta*lam_hat and state-HFER; b: exists LR with beta=0 all-seed divergence and beta>=0.9 training; c: subcritical beta-effect within noise; d: EoS cells equilibrate sharpness near 2*T_eff/eta (EMA protocol)",
+  "protocol": "P-prac",
+  "determinism": {
+    "deterministic_algorithms": true,
+    "deterministic_strict": false,
+    "cudnn_benchmark": false,
+    "tf32": false,
+    "cublas_workspace_config": ":4096:8"
+  },
+  "task": "resnet-cifar",
+  "probe": "g1",
+  "code_sha": "11d8d1f6",
+  "git_sha": "11d8d1f6",
+  "git_dirty": false,
+  "content_sha": "4a43b05f",
+  "python": "3.11.7",
+  "numpy": "2.4.6",
+  "platform": "Linux-4.18.0-372.9.1.el8.x86_64-x86_64-with-glibc2.28"
+}
