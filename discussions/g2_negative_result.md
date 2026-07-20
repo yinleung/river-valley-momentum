@@ -1,12 +1,19 @@
 # G2 kill-switch: the river-valley decomposition does not transfer to ResNet-CIFAR
 ## (partial-transfer negative result — campaign paused per plan_v5 §3.2 G2)
 
-**Status: DRAFT pending the 4 β=0.99 cells (running, jobs 9232192–95). Verdict already
-robust from 8/12 cells; the β=0.99 cells can only reinforce it. G3/G4 NOT started.**
+**Status: FINAL — all 12/12 cells complete. G3/G4 NOT started; awaiting Leon.**
 
 Written 2026-07-21 from the G2 decomposition runs (`resnet-cifar_g2_decomp_*`, git
 b65bd45/cb93917b). This is the campaign's predeclared kill-switch (plan §3.2 G2, §3.4
 order): "if the four support conditions fail, STOP — do not start G3/G4."
+
+**Formal gate tally** (`run_g2_decomp.py --stage report`, scored window 1 /
+layer3.0.conv1, all 12 cells): **gate 1 (state dominance) 0/12 · gate 2 (sharp
+concentration) 0/12 · gate 3 (low-freq outside) 1/12 · KILL-SWITCH TRIPPED.** The four
+β=0.99 cells landed exactly as predicted (share_lb ≈ 0.000, state stream pure DC — the
+EMA buffer has removed all high-band state content). The residual ξ is clean white noise
+at every one of the 12 cells (|HFER(ξ) − white| ≤ 0.008), so the decomposition is sound
+on the whiteness axis — the failure is real signal structure, not a broken split.
 
 ## The measurement (exactly as predeclared)
 
