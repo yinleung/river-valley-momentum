@@ -50,17 +50,6 @@ g1:
   - 2
   - 3
   - 4
-  # grid_lrs: reviewed pick from the completed scan (job 9224566; records
-  # resnet-cifar_g1_scan_* at git c1aa62f/7776e58), classified on MID-RUN chi
-  # (median of chi_trace at t >= 1000) — tail chi under-classifies because sharpness
-  # collapses at memorization. Regimes: 0.05 subcritical (chi_med 0.48); 0.1
-  # intermediate onset (1.96, acc peak 0.843); 0.2 EoS (2.33); 0.4 EoS max (2.51 —
-  # the auto-pick missed 0.4/0.8, the strongest predicted-benefit cells); 0.8
-  # near-edge (2.34); 3.2 beyond-edge self-stabilized (1.66, acc degraded to 0.687).
-  # SCAN FINDING: beta=0 NEVER diverges up to lr 6.4 at 10k steps (BN rescaling
-  # protection) -> card gate (b) is not testable on the BN arm; it is tested on the
-  # GroupNorm control arm, and the BN-side stabilization claim is reported as accuracy
-  # recovery at lr 3.2 (labeled supplementary, decided post-scan pre-grid).
   grid_lrs:
   - 0.05
   - 0.1
@@ -81,6 +70,43 @@ g2:
   - layer2.0.conv1
   - layer3.0.conv1
   - linear
+  cells:
+  - - 0.05
+    - 0.0
+    - 0
+  - - 0.05
+    - 0.9
+    - 0
+  - - 0.05
+    - 0.99
+    - 0
+  - - 0.2
+    - 0.0
+    - 0
+  - - 0.2
+    - 0.9
+    - 0
+  - - 0.2
+    - 0.99
+    - 0
+  - - 0.8
+    - 0.0
+    - 0
+  - - 0.8
+    - 0.9
+    - 0
+  - - 0.8
+    - 0.99
+    - 0
+  - - 3.2
+    - 0.0
+    - 0
+  - - 3.2
+    - 0.9
+    - 0
+  - - 3.2
+    - 0.99
+    - 0
 g3:
   omegas:
   - 0.02

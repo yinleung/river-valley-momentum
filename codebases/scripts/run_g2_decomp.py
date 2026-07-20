@@ -244,12 +244,14 @@ def stage_select(y: dict) -> None:
     for r in rows:
         m = json.loads((CACHE / r["run_id"] / "metrics.json").read_text())
         c = json.loads((CACHE / r["run_id"] / "config.json").read_text())
-        b = [p for p in r["key"].split("_") if p.startswith("b")][0]
-        cell = (float(c["lr"]), float(b[1:]))
+        cell = (float(c["lr"]), _beta_of(r["key"]))
         stat.setdefault(cell, []).append(m["diverged"])
     lrs = sorted({c[0] for c in stat})
+    # the card's ~12 cells: 4 regime-representative LRs x {beta0-if-stable, 0.9, 0.99}
+    # (subcritical / EoS / near-edge / beyond-edge; indices into the 6-LR grid)
+    reps = [lrs[0], lrs[2], lrs[4], lrs[5]] if len(lrs) >= 6 else lrs
     cells = []
-    for lr in lrs:
+    for lr in reps:
         b0_ok = (lr, 0.0) in stat and not any(stat[(lr, 0.0)])
         picks = ([0.0] if b0_ok else []) + [0.9, 0.99]
         cells += [[lr, b, 0] for b in picks[:3]]
