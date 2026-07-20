@@ -130,6 +130,39 @@ Component times (1 GPU; determinism policy ON: TF32 off, cudnn.benchmark off):
   (~50–100 GB transient; delete after the paper's numbers freeze).
 - G3 checkpoints + probe vectors: `codebases/results/ckpt/g3_*.pt|_probe.npz`.
 
+## 4b. G1 findings (2026-07-20) — two that change how gates are reported
+
+**F1 — BN never diverges at β=0 (scan + grid, lr 0.0125 → 6.4, 10k steps).** Card gate (b)
+("some LR where β=0 diverges on all seeds and β≥0.9 trains") is **not testable on the BN
+arm**: BatchNorm's rescaling invariance removes hard divergence over the whole ladder.
+Reported as a finding, and gate (b) moves to the GroupNorm control (predeclared before the
+grid launched, commit 039694f).
+
+**F2 — GroupNorm sign-flips gate (b): momentum DEstabilizes at fixed η.** GN control
+(headline cells, 3 seeds):
+
+| cell | β=0 | β=0.9 |
+|---|---|---|
+| lr 0.8 | 0/3 diverged, acc 0.786 | **3/3 diverged** |
+| lr 3.2 | 0/3 diverged, acc 0.677 | 1/3 diverged, acc 0.747 (surv.) |
+
+Mechanism, from the instrumentation (not inferred): **every GN divergence occurs at step
+10–11**, and λ̂(init) ≈ 616–707 for ALL GN runs, survivors included. So both arms start
+enormously above their thresholds (β=0 at lr 0.8: χ = 565 vs threshold 2); the β=0 arms
+survive by catapulting — 200–450 counted loss spikes — while the β=0.9 arms die during the
+same transient. Reading: EMA at fixed η spreads the corrective response over T_eff ≈ 19
+steps, so the iterate escapes before the correction lands. Note the non-monotonicity — at
+lr 3.2 the β=0.9 arm mostly survives (bigger first step escapes to a flatter region faster).
+
+Scope, stated plainly: this is an **initialization-transient** effect, OUTSIDE the
+stationary/local regime the propositions describe (they linearize around a valley). It is
+NOT evidence against the stationary threshold claim, and it must not be reported as such —
+but it IS a real sign-flip of the gate as operationalized, so per the G1 card it is reported
+as a negative result and the theory's scope wording is revisited before G4.
+**For Leon (scope decision, not taken here):** the natural follow-up is a short-warmup GN arm
+(standard practice; isolates transient from stationary). It is not in the predeclared card,
+so it is not being run unilaterally — say the word and it is ~1 GPU-h.
+
 ## 5. Node-hours / tokens spent (campaign ledger)
 
 | date | what | jobs | GPU-h | tokens (≈GPU-h×1.5) |

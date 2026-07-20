@@ -1,0 +1,14 @@
+{
+  "diverged": true,
+  "n_steps": 10,
+  "spikes": 0,
+  "train_loss_tail": 30.80399808883667,
+  "val_loss": Infinity,
+  "val_acc": 0.0,
+  "lam_tail": 707.043701171875,
+  "chi_tail": 226.25398437499996,
+  "sharpness_threshold": 11.875000000000002,
+  "secs": 24.0,
+  "hfer_w1_mid": NaN,
+  "raw_paths": ""
+}
