@@ -115,6 +115,17 @@ def low_share_from_spec(spec: np.ndarray, T: int, lo_frac: float = 0.15) -> floa
 
 
 def run_cell(y: dict, lr: float, beta: float, seed: int) -> str:
+    key0 = f"decomp_lr{lr:g}_b{beta:g}_s{seed}"
+    import csv as _csv
+    idx = _CODEBASES / "results" / "index" / "runs.csv"
+    if idx.exists():
+        with open(idx) as f:
+            hit = [r["run_id"] for r in _csv.DictReader(f)
+                   if r["task"] == "resnet-cifar" and r["probe"] == "g2"
+                   and r["key"] == key0]
+        if hit:
+            print(f"  [resume] {key0} cached as {hit[-1]} — skipping")
+            return hit[-1]
     g2 = y["g2"]
     cfg = dict(seed=seed, device="auto", dataset=y["data"]["dataset"],
                batch_size=y["data"]["batch_size"], augment=y["data"]["augment"],
