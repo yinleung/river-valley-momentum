@@ -167,7 +167,13 @@ so it is not being run unilaterally — say the word and it is ~1 GPU-h.
 
 | date | what | jobs | GPU-h | tokens (≈GPU-h×1.5) |
 |---|---|---|---|---|
-| 2026-07-19 | Phase 0 bring-up: smoke ×3, cudacheck, preflight ×4, calib1 ×3, calib8 (8-GPU) | 9224222–9224312 | ≈1.5 | ≈2.3 |
+| 2026-07-19→21 | Phase 0 + G1 (scan/grid/pprac/c100/gn/topup) + G2 (12 cells) — 36 jobs total | 9224222–9232195 | **135.3** | **203** |
+
+Measured from all 36 job stats files (`sum ELAPSE(USE) × gpu`). Well under budget: G1
+projected 110 h → the actual G1+G2 spend is ~135 h incl. Phase 0 and the one OOM/elapse
+re-runs. Group budget was ≈4,928 token-h remaining at session start; ~203 spent → ≈4,725
+remaining. Storage: `/work/gs26` 3.91 TB/8 TB (47%), file-count 3.09M/4.10M (75.4%); raw
+windows 118 GB / 312 files under `results/raw/` (gitignored, §4).
 
 ## 6. Status / next actions
 
